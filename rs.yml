@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+ name: web-rs
+spec:
+ replicas: 1
+ selector:
+  matchLabels:
+   app: hello-world
+ template:
+  metadata:
+   labels:
+    app: hello-world
+  spec:
+   containers:
+   - name: hello-ctr
+     image: nigelpoulton/k8sbook:latest
+     ports:
+     - containerPort: 8080
+     volumeMounts:
+     # name must match the volume name below
+      - name: models
+        mountPath: "/models"
+   volumes:
+   - name: models
+     persistentVolumeClaim:
+      claimName: models
