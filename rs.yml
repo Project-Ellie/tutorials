@@ -12,6 +12,11 @@ spec:
    labels:
     app: hello-world
   spec:
+   securityContext:
+    # the group id of the owner of the actual directory behind the volume
+    # This is actually a leaking abstraction, but the only solution that I have.
+    # A better way would've been to have an appropriate ownership on the mounted dir, I guess...?
+    supplementalGroups: [1000] 
    containers:
    - name: hello-ctr
      image: nigelpoulton/k8sbook:latest
