@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+ name: mongo1-rs
+spec:
+ replicas: 1
+ selector:
+  matchLabels:
+   app: mongo1
+ template:
+  metadata:
+   labels:
+    app: mongo1
+  spec:
+   securityContext:
+    # the group id of the owner of the actual directory behind the volume
+    # This is actually a leaking abstraction, but the only solution that I have.
+    # A better way would've been to have an appropriate ownership on the mounted dir, I guess...?
+    supplementalGroups: [1000] 
+   containers:
+   - name: mongo-ctr
+     image: bitnami/mongodb:latest
+     # container tries to chown /data/db and fails, thus we override the entrypoint
+     command: ["mongod", "--bind_ip_all"]
+     ports:
+     - containerPort: 27017
+     volumeMounts:
+     # name must match the volume name below
+      - name: mongo1
+        mountPath: "/data/db"
+   volumes:
+   - name: mongo1
+     persistentVolumeClaim:
+      claimName: mongo1
