@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+ name: jupyter-rs
+spec:
+ replicas: 1
+ selector:
+  matchLabels:
+   app: jupyter
+ template:
+  metadata:
+   labels:
+    app: jupyter
+  spec:
+   securityContext:
+    # the group id of the owner of the actual directory behind the volume
+    # This is actually a leaking abstraction, but the only solution that I have.
+    # A better way would've been to have an appropriate ownership on the mounted dir, I guess...?
+    supplementalGroups: [1000] # this is wgiersche's home group
+   nodeSelector:
+    capability: gpu
+   containers:
+   - name: jupyter-ctr
+     image: tensorflow/tensorflow:latest-gpu
+     ports:
+     - containerPort: 8888
+     volumeMounts:
+     # name must match the volume name below
+      - name: data
+        mountPath: "/data/"
+   volumes:
+   - name: data
+     persistentVolumeClaim:
+      claimName: data
