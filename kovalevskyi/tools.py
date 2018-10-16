@@ -48,8 +48,11 @@ def create_input_data(df, select_feats=[], oh_feats={}, cross_feats=[]):
         res = _safe_append(res, one_hot(df[k], oh_feats[k]))
 
     for c in cross_feats:
-        lk, ls = c.items()[0]
-        rk, rs = c.items()[1]
+        keys = list(c.keys())
+        keys.sort()
+        
+        lk, ls = keys[0], c[keys[0]]
+        rk, rs = keys[1], c[keys[1]]
         lhs = one_hot(df[lk], ls)
         rhs = one_hot(df[rk], rs)
         cross = [(lhs[:,i].reshape(ls,1) * rhs[:,i].reshape(1,rs)).reshape(rs*ls) for i in range(len(df))]
