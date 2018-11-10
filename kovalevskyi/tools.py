@@ -1,5 +1,8 @@
 import sys
+import math
 import numpy as np
+import tensorflow as tf
+
 # A little tool stolen from Magnus Erik Hvass Pedersen
 def print_progress(format_string, count, total=1.0):
 
@@ -98,3 +101,19 @@ def haversine(origin, destination):
     d = radius * c
 
     return d
+
+
+
+def tf_haversine(lat1, lon1, lat2, lon2):
+    
+    def radians(a):
+        return a * math.pi / 180.0
+
+    radius = 6371.0
+    dlat = radians (lat2 - lat1) 
+    dlon = radians (lon2 - lon1)
+    a = (tf.sin(dlat / 2.0) * tf.sin(dlat/2.0) +
+         tf.cos(radians(lat1)) * tf.cos(radians(lat2)) *
+         tf.sin(dlon / 2.0) * tf.sin(dlon / 2.0))
+    c = 2.0 * tf.atan2(tf.sqrt(a), tf.sqrt(1.0 - a))
+    return radius * c
