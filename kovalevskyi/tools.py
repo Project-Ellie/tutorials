@@ -2,6 +2,8 @@ import sys
 import math
 import numpy as np
 import tensorflow as tf
+import inspect
+import os
 
 # A little tool stolen from Magnus Erik Hvass Pedersen
 def print_progress(format_string, count, total=1.0):
@@ -117,3 +119,12 @@ def tf_haversine(lat1, lon1, lat2, lon2):
          tf.sin(dlon / 2.0) * tf.sin(dlon / 2.0))
     c = 2.0 * tf.atan2(tf.sqrt(a), tf.sqrt(1.0 - a))
     return radius * c
+
+
+def make_src_dumper(package):
+    def write_py(func):
+        filename=os.path.join(package, "{}.py".format(func.__name__))
+        with open(filename, 'w') as file:
+            file.write(inspect.getsource(func))
+        return "{} written to {}.".format(func.__name__, filename)
+    return write_py
