@@ -20,7 +20,7 @@ import argparse
 import json
 import os
 
-import model
+from train.train_tools import join_paths
 
 import tensorflow as tf
 
