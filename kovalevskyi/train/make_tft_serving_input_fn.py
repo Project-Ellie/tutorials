@@ -1,8 +1,10 @@
 def make_tft_serving_input_fn(metadata_dir):
 
+    import tensorflow as tf
+    import tensorflow_transform as tft
     from train.model_config import SIGNATURE_INT_COLUMNS
     from train.model_config import SIGNATURE_FLOAT_COLUMNS
-    import tensorflow_transform as tft
+    
     
     def _input_fn():
         # placeholders for all the raw inputs

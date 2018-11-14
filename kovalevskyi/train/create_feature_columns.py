@@ -1,7 +1,5 @@
 def create_feature_columns():
     
-    import numpy as np
-    
     from tensorflow.feature_column import numeric_column as num
     from tensorflow.feature_column import bucketized_column as buck
     from tensorflow.feature_column import crossed_column as cross
@@ -21,8 +19,8 @@ def create_feature_columns():
     ################################################################
     #  Crossed and embedded
     ################################################################
-    lat_boundaries = np.arange(10,80,5).tolist()
-    lon_boundaries = np.arange(-100, -55, 5).tolist()    
+    lat_boundaries = range(10,80,5)
+    lon_boundaries = range(-100, -55, 5)
     cross_size = len(lat_boundaries) * len(lon_boundaries)
 
     arr_geo_emb = emb(cross([

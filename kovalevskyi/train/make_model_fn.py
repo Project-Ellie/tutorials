@@ -1,6 +1,8 @@
 def make_model_fn(feature_columns, options):
     
     import tensorflow as tf
+    from train.make_hypothesis import make_hypothesis
+    
     def _model_fn(features, labels, mode):
 
         input_layer = tf.feature_column.input_layer( 
@@ -9,7 +11,7 @@ def make_model_fn(feature_columns, options):
         #############################################################
         # This single line is the actual model
         #############################################################
-        out = tf.layers.dense(input_layer, 1, activation=None)
+        out = make_hypothesis(input_layer, options)
 
         if mode == tf.estimator.ModeKeys.PREDICT:
             return tf.estimator.EstimatorSpec(mode, predictions=out)
