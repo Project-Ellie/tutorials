@@ -19,17 +19,31 @@ import traceback
 import argparse
 import json
 import os
+import tensorflow as tf
 
 from train.train_tools import join_paths
+from train.train_and_evaluate import train_and_evaluate
 
-import tensorflow as tf
+tf.logging.set_verbosity(tf.logging.INFO)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+
     # Input Arguments
     parser.add_argument(
-        '--train_data_paths',
-        help = 'GCS or local path to training data',
+        '--base_dir',
+        help = 'base_dir from which to interpret all other relative paths',
+        required = True
+    )
+    parser.add_argument(
+        '--metadata_dir',
+        help = 'base_dir from which to interpret all other relative paths',
+        required = True
+    )
+    
+    parser.add_argument(
+        '--train_data_pattern',
+        help = 'GCS path glob pattern to training data',
         required = True
     )
     parser.add_argument(
@@ -39,16 +53,22 @@ if __name__ == '__main__':
         default = 512
     )
     parser.add_argument(
+        '--max_train_steps',
+        help = 'Max num steps to run the training job up to',
+        type = int,
+        default = 5000
+    )
+
+    parser.add_argument(
+        '--eval_data_pattern',
+        help = 'GCS patch glob pattern to evaluation data',
+        required = True
+    )
+    parser.add_argument(
         '--eval_batch_size',
         help = 'Batch size for evaluation steps',
         type = int,
         default = 512
-    )
-    parser.add_argument(
-        '--train_steps',
-        help = 'Steps to run the training job for',
-        type = int,
-        default = 5000
     )
     parser.add_argument(
         '--eval_steps',
@@ -56,12 +76,14 @@ if __name__ == '__main__':
         default = 10,
         type = int
     )
-    parser.add_argument(
-        '--eval_data_paths',
-        help = 'GCS or local path to evaluation data',
-        required = True
-    )
+
     # Training arguments
+    parser.add_argument(
+        '--learning_rate',
+        help = 'How long to wait before running first evaluation',
+        default = 1e-4,
+        type = float
+    )
     parser.add_argument(
         '--nbuckets',
         help = 'Number of buckets into which to discretize lats and lons',
@@ -75,33 +97,44 @@ if __name__ == '__main__':
         default = "128 32 4"
     )
     parser.add_argument(
-        '--output_dir',
+        '--model_dir',
         help = 'GCS location to write checkpoints and export models',
         required = True
     )
+    parser.add_argument(
+        '--distribute',
+        help = 'this model ignores this field, but it is required by gcloud',
+        type = bool,
+        default = False
+    )
+    
+    
     parser.add_argument(
         '--job-dir',
         help = 'this model ignores this field, but it is required by gcloud',
         default = 'junk'
     )
-    # Eval arguments
-    parser.add_argument(
-        '--eval_delay_secs',
-        help = 'How long to wait before running first evaluation',
-        default = 10,
-        type = int
-    )
-    parser.add_argument(
-        '--min_eval_frequency',
-        help = 'Minimum number of training steps between evaluations',
-        default = 1,
-        type = int
-    )
-    parser.add_argument(
-        '--format',
-        help = 'Is the input data format csv or tfrecord?',
-        default = 'csv'
-    )
+    
+
+    def not_now():
+        # Eval arguments
+        parser.add_argument(
+            '--eval_delay_secs',
+            help = 'How long to wait before running first evaluation',
+            default = 10,
+            type = int
+        )
+        parser.add_argument(
+            '--min_eval_frequency',
+            help = 'Minimum number of training steps between evaluations',
+            default = 1,
+            type = int
+        )
+        parser.add_argument(
+            '--format',
+            help = 'Is the input data format csv or tfrecord?',
+            default = 'csv'
+        )
 
     args = parser.parse_args()
     arguments = args.__dict__
@@ -112,8 +145,8 @@ if __name__ == '__main__':
 
     # Append trial_id to path if we are doing hptuning
     # This code can be removed if you are not using hyperparameter tuning
-    arguments['output_dir'] = os.path.join(
-        arguments['output_dir'],
+    arguments['model_dir'] = os.path.join(
+        arguments['model_dir'],
         json.loads(
             os.environ.get('TF_CONFIG', '{}')
         ).get('task', {}).get('trial', '')
@@ -121,6 +154,6 @@ if __name__ == '__main__':
 
     # Run the training job:
     try:
-        model.train_and_evaluate(arguments)
+        train_and_evaluate(join_paths(arguments), distribute=arguments['distribute'])
     except:
         traceback.print_exc()

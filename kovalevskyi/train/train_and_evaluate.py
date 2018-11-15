@@ -1,9 +1,12 @@
-def train_and_evaluate(feature_columns, options, distribute=False):
+def train_and_evaluate(options, distribute=False):
 
     import tensorflow as tf
     from train.make_model_fn import make_model_fn
     from train.make_tft_serving_input_fn import make_tft_serving_input_fn
     from train.make_input_fn import make_input_fn
+    from train.create_feature_columns import create_feature_columns
+    
+    feature_columns = create_feature_columns()
     
     if distribute:
         strategy=tf.contrib.distribute.MirroredStrategy()    
