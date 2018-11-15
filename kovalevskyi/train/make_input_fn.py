@@ -1,4 +1,4 @@
-def make_input_fn(filename_pattern, batch_size, shuffle_buffer_size=None):
+def make_input_fn(filename_pattern, batch_size, shuffle_buffer_size=None, distribute=False):
 
     import tensorflow as tf
     from train.model_config import ORDERED_TRAINING_DEFAULTS
@@ -26,7 +26,10 @@ def make_input_fn(filename_pattern, batch_size, shuffle_buffer_size=None):
                    .map(decode_csv)
                    .map(pop_target)
                    .batch(batch_size))
-
-        return dataset.make_one_shot_iterator().get_next()
+        
+        if distribute:
+            return dataset 
+        else:
+            return dataset.make_one_shot_iterator().get_next()
     
     return _input_fn

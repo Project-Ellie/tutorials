@@ -1,11 +1,16 @@
-def train_and_evaluate(feature_columns, options):
+def train_and_evaluate(feature_columns, options, distribute=False):
 
     import tensorflow as tf
     from train.make_model_fn import make_model_fn
     from train.make_tft_serving_input_fn import make_tft_serving_input_fn
     from train.make_input_fn import make_input_fn
     
-    config = tf.estimator.RunConfig(model_dir=options['model_dir'])
+    if distribute:
+        strategy=tf.contrib.distribute.MirroredStrategy()    
+        config = tf.estimator.RunConfig(model_dir=options['model_dir'], train_distribute=strategy)
+    else:
+        config = tf.estimator.RunConfig(model_dir=options['model_dir'])
+        
 
     model_fn = make_model_fn(feature_columns, options)
 
@@ -18,7 +23,7 @@ def train_and_evaluate(feature_columns, options):
 
     train_input_fn = make_input_fn(
         options['train_data_pattern'], shuffle_buffer_size=80000, 
-        batch_size=options['train_batch_size'])
+        batch_size=options['train_batch_size'], distribute=distribute)
 
     eval_input_fn = make_input_fn(
         options['eval_data_pattern'], 

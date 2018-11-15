@@ -1,4 +1,3 @@
-tensorflow
 apache_beam[gcp]
 tensorflow_transform
 tensorflow-data-validation
@@ -9,3 +8,4 @@ datalab
 google-cloud-bigquery==1.6.0
 google-cloud-pubsub
 pandas-gbq
+google_compute_engine
