@@ -36,6 +36,12 @@ def exec_pipeline_prod (options, train_dir, eval_dir, test_dir,
             train_prefix = os.path.join(train_dir, prefix)
             encoder = tft.coders.ExampleProtoCoder(t_metadata.schema)
 
+            print("######################################################")
+            print("######################################################")
+            print(t_metadata.schema.as_feature_spec())
+            print("######################################################")
+            print("######################################################")
+            
             _ = (t_data
                  | 'EncodeTFRecord_train' >> beam.Map(encoder.encode)
                  | 'WriteTFRecord_train' >> beam.io.WriteToTFRecord(train_prefix))
@@ -50,7 +56,8 @@ def exec_pipeline_prod (options, train_dir, eval_dir, test_dir,
 
             t_dataset = ((signature_dataset, transform_fn) 
                          | "TransformEval" >> beam_impl.TransformDataset())
-            t_data, _ = t_dataset
+            t_data, t_metadata = t_dataset
+            encoder = tft.coders.ExampleProtoCoder(t_metadata.schema)
             eval_prefix = os.path.join(eval_dir, prefix)
             _ = (t_data
                  | 'EncodeTFRecord_eval' >> beam.Map(encoder.encode)
@@ -66,7 +73,8 @@ def exec_pipeline_prod (options, train_dir, eval_dir, test_dir,
 
             t_dataset = ((signature_dataset, transform_fn) 
                          | "TransformTest" >> beam_impl.TransformDataset())
-            t_data, _ = t_dataset
+            t_data, t_metadata = t_dataset
+            encoder = tft.coders.ExampleProtoCoder(t_metadata.schema)
             test_prefix = os.path.join(test_dir, prefix)
             _ = (t_data
                  | 'EncodeTFRecord_test' >> beam.Map(encoder.encode)

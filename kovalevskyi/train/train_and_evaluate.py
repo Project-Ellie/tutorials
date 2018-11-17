@@ -3,8 +3,10 @@ def train_and_evaluate(options, distribute=False):
     import tensorflow as tf
     from train.make_model_fn import make_model_fn
     from train.make_tft_serving_input_fn import make_tft_serving_input_fn
-    from train.make_input_fn import make_input_fn
     from train.create_feature_columns import create_feature_columns
+
+    #from train.make_input_fn import make_input_fn
+    from train.make_tfr_input_fn import make_tfr_input_fn
     
     feature_columns = create_feature_columns()
     
@@ -24,11 +26,11 @@ def train_and_evaluate(options, distribute=False):
     exporter = tf.estimator.LatestExporter('exporter', 
                                            make_tft_serving_input_fn(options['metadata_dir']))
 
-    train_input_fn = make_input_fn(
+    train_input_fn = make_tfr_input_fn(
         options['train_data_pattern'], shuffle_buffer_size=80000, 
         batch_size=options['train_batch_size'], distribute=distribute)
 
-    eval_input_fn = make_input_fn(
+    eval_input_fn = make_tfr_input_fn(
         options['eval_data_pattern'], 
         batch_size=options['eval_batch_size'])  
 
