@@ -3,6 +3,26 @@ SIGNATURE_FLOAT_COLUMNS = ['DEP_LAT', 'DEP_LON', 'DEP_DELAY', 'MEAN_TEMP_DEP',
                  'MEAN_VIS_DEP', 'WND_SPD_DEP', 'ARR_LAT', 
                  'ARR_LON', 'ARR_DELAY', 'MEAN_TEMP_ARR', 'MEAN_VIS_ARR', 'WND_SPD_ARR']
 
+
+import tensorflow as tf
+from tensorflow_transform.tf_metadata import dataset_metadata
+from tensorflow_transform.tf_metadata import dataset_schema
+SIGNATURE_SCHEMA={}
+for t, cols in [
+    (tf.float32, SIGNATURE_FLOAT_COLUMNS), 
+    (tf.int64, SIGNATURE_INT_COLUMNS)]:
+    SIGNATURE_SCHEMA.update({
+        col : dataset_schema.ColumnSchema(
+            t, [], dataset_schema.FixedColumnRepresentation())
+                   for col in cols})
+
+    SIGNATURE_METADATA = dataset_metadata.DatasetMetadata(
+    dataset_schema.Schema(SIGNATURE_SCHEMA))
+
+
+
+SIGNATURE_COLUMNS=SIGNATURE_INT_COLUMNS + SIGNATURE_FLOAT_COLUMNS
+
 TRAINING_COLUMNS=[
     'DEP_DOW', 'DEP_HOD', 
     

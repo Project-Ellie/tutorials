@@ -19,8 +19,15 @@ then
 	virtualenv --python=python2.7 ~/py2
 	source ~/py2/bin/activate
 	pip install google_compute_engine
-	gsutil cp gs://going-tfx/transfer/tensorflow-1.12.0rc2.748435b.AVX2.CUDA10-cp27-cp27mu-linux_x86_64.whl ~/
-	pip install ~/tensorflow-1.12.0rc2.748435b.AVX2.CUDA10-cp27-cp27mu-linux_x86_64.whl
+	if [ "$(which nvidia-smi)" = "" ]
+	then
+		echo "nvidia-smi not found. Installing tensorflow without GPU support."
+		pip install tensorflow
+	else
+		echo "nvidia-smi found. Installing tensorflow with GPU support."
+		gsutil cp gs://going-tfx/transfer/tensorflow-1.12.0rc2.748435b.AVX2.CUDA10-cp27-cp27mu-linux_x86_64.whl ~/
+		pip install ~/tensorflow-1.12.0rc2.748435b.AVX2.CUDA10-cp27-cp27mu-linux_x86_64.whl
+	fi
 	pip install --upgrade -r ${SRC_DIR}/requirements.txt
 	pip install jupyterlab
 	pip install jupyter-tensorboard
