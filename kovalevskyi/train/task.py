@@ -103,9 +103,14 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         '--distribute',
+        help = 'boolean. Whether or not to distribute between GPUs',
+        type = bool
+    )
+    parser.add_argument(
+        '--prefetch_buffer_size',
         help = 'this model ignores this field, but it is required by gcloud',
-        type = bool,
-        default = False
+        type = int,
+        default = 1024
     )
     
     
@@ -154,6 +159,6 @@ if __name__ == '__main__':
 
     # Run the training job:
     try:
-        train_and_evaluate(join_paths(arguments), distribute=arguments['distribute'])
+        train_and_evaluate(join_paths(arguments))
     except:
         traceback.print_exc()
