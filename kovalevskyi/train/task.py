@@ -110,13 +110,7 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         '--prefetch_buffer_size',
-        help = 'this model ignores this field, but it is required by gcloud',
-        type = int,
-        default = 1024
-    )
-    parser.add_argument(
-        '--prefetch_buffer_size',
-        help = 'prefetch buffer size',
+        help = 'how many batches to pre-fetch into GPU memory',
         type = int,
         default = 1024
     )
