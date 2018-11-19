@@ -21,8 +21,14 @@ def pre_process(row):
                  'DIFF_LAT', 'DIFF_LON', 'DISTANCE']:
             row[c] = tft.scale_to_0_1(row[c])
         return row
+
+    def categorical_from_strings(row):
+        row['AIRLINE'] = tft.string_to_int(row['AIRLINE'])
+        row['ARR'] = tft.string_to_int(row['ARR'])
+        return row
     
     row = row.copy()
     row = add_engineered(row)
     row = scale_floats(row)
+    row = categorical_from_strings(row)
     return row

@@ -4,8 +4,8 @@ def make_tft_serving_input_fn(metadata_dir):
     import tensorflow_transform as tft
     from train.model_config import SIGNATURE_INT_COLUMNS
     from train.model_config import SIGNATURE_FLOAT_COLUMNS
-    
-    
+    from train.model_config import SIGNATURE_STR_COLUMNS
+        
     def _input_fn():
         # placeholders for all the raw inputs
         placeholders = {
@@ -15,6 +15,11 @@ def make_tft_serving_input_fn(metadata_dir):
         placeholders.update({
             key: tf.placeholder(name = key, shape=[None], dtype=tf.float32)
             for key in SIGNATURE_FLOAT_COLUMNS
+        })
+
+        placeholders.update({
+            key: tf.placeholder(name = key, shape=[None], dtype=tf.string)
+            for key in SIGNATURE_STR_COLUMNS
         })
 
         # transform using the saved model in transform_fn        

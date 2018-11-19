@@ -1,5 +1,6 @@
 def create_feature_columns():
     
+    from tensorflow.feature_column import indicator_column as ind
     from tensorflow.feature_column import numeric_column as num
     from tensorflow.feature_column import bucketized_column as buck
     from tensorflow.feature_column import crossed_column as cross
@@ -15,6 +16,13 @@ def create_feature_columns():
             'MEAN_TEMP_DEP','MEAN_VIS_DEP','WND_SPD_DEP',
             'MEAN_TEMP_ARR','MEAN_VIS_ARR','WND_SPD_ARR',
             'DIFF_LAT','DIFF_LON','DISTANCE']]
+    
+    ################################################################
+    #  categorical from ints, bucket counts from examination of the 
+    #  full dataset
+    ################################################################
+    airline = ind(cid('AIRLINE', num_buckets=30))
+    arrival = ind(cid('ARR', num_buckets=400))
     
     ################################################################
     #  Crossed and embedded
@@ -36,6 +44,9 @@ def create_feature_columns():
         cid("DEP_DOW", num_buckets=8)], 7*24), 10)
 
     ################################################################
-    #  Crossed and embedded
+    #  all together
     ################################################################
-    return feature_columns + [dep_how_emb, arr_geo_emb, dep_geo_emb]
+    return (
+        feature_columns + 
+        [airline, arrival] +
+        [dep_how_emb, arr_geo_emb, dep_geo_emb])

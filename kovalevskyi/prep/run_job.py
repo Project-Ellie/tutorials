@@ -23,4 +23,4 @@ def run_job(args):
     exec_pipeline_prod (opts, args['train_dir'], args['eval_dir'],args['test_dir'],
                         args['metadata_dir'], args['tmp_dir'],
                         fractions, float(args['sample_rate']), args['prefix'],
-                        runner=args['runner'])
+                        encode=args['encode'], runner=args['runner'])

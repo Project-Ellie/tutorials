@@ -101,11 +101,19 @@ if __name__ == '__main__':
         help = 'GCS location to write checkpoints and export models',
         required = True
     )
+    
+    
     parser.add_argument(
         '--distribute',
-        help = 'this model ignores this field, but it is required by gcloud',
+        help = 'whether or not to distribute work over multiple GPUs',
         type = bool,
         default = False
+    )
+    parser.add_argument(
+        '--prefetch_buffer_size',
+        help = 'prefetch buffer size',
+        type = int,
+        default = 1024
     )
     
     
@@ -152,6 +160,10 @@ if __name__ == '__main__':
         ).get('task', {}).get('trial', '')
     ) 
 
+    if arguments['distribute']:
+        print("###############################################################")
+        print("       Running distributed!")
+        print("###############################################################")
     # Run the training job:
     try:
         train_and_evaluate(join_paths(arguments), distribute=arguments['distribute'])

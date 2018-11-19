@@ -82,6 +82,12 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
+        '--encode',
+        help = 'csv, tfrecord or both, defaults to tfrecord',
+        type = str,
+        default = 'tfrecord')
+    
+    parser.add_argument(
         '--fractions',
         help = 'data split: comma-seperated fractions of 100, like e.g 80,10,10',
         type = str,
