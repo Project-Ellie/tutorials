@@ -1,4 +1,7 @@
 def create_feature_columns():
+    """
+        returns: a dict of features columns for wide and deep input
+    """
     
     from tensorflow.feature_column import indicator_column as ind
     from tensorflow.feature_column import numeric_column as num
@@ -46,7 +49,6 @@ def create_feature_columns():
     ################################################################
     #  all together
     ################################################################
-    return (
-        feature_columns + 
-        [airline, arrival] +
-        [dep_how_emb, arr_geo_emb, dep_geo_emb])
+    return {
+        'deep': feature_columns + [dep_how_emb, arr_geo_emb, dep_geo_emb],
+        'wide': [airline, arrival]}

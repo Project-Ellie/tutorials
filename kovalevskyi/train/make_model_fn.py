@@ -5,13 +5,10 @@ def make_model_fn(feature_columns, options):
     
     def _model_fn(features, labels, mode):
 
-        input_layer = tf.feature_column.input_layer( 
-            features, feature_columns=feature_columns)
-
         #############################################################
         # This single line is the actual model
         #############################################################
-        out = make_hypothesis(input_layer, options)
+        out = make_hypothesis(features, feature_columns, options)
 
         if mode == tf.estimator.ModeKeys.PREDICT:
             return tf.estimator.EstimatorSpec(mode, predictions=out)
