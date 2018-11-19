@@ -1,4 +1,4 @@
-def train_and_evaluate(options, distribute=False):
+def train_and_evaluate(options):
 
     import tensorflow as tf
     from train.make_model_fn import make_model_fn
@@ -10,7 +10,10 @@ def train_and_evaluate(options, distribute=False):
     
     feature_columns = create_feature_columns()
     
-    if distribute:
+    if options['distribute']:
+        print("#####################################################################")
+        print("    Runnin in distibuted mode")
+        print("#####################################################################")
         strategy=tf.contrib.distribute.MirroredStrategy()    
         config = tf.estimator.RunConfig(model_dir=options['model_dir'], train_distribute=strategy)
     else:
@@ -28,7 +31,7 @@ def train_and_evaluate(options, distribute=False):
 
     train_input_fn = make_tfr_input_fn(
         options['train_data_pattern'], shuffle_buffer_size=80000, 
-        batch_size=options['train_batch_size'], distribute=distribute, 
+        batch_size=options['train_batch_size'], distribute=options['distribute'],
         prefetch_buffer_size=options['prefetch_buffer_size'])
 
     eval_input_fn = make_tfr_input_fn(
