@@ -8,6 +8,7 @@ def train_and_evaluate(options):
     #from train.make_input_fn import make_input_fn
     from train.make_tfr_input_fn import make_tfr_input_fn
     from train.make_hypotheses import make_hypotheses
+    from train.make_input_fns import make_input_fns
 
     hypothesis = make_hypotheses()[options['hypothesis']]
     
@@ -29,15 +30,25 @@ def train_and_evaluate(options):
     exporter = tf.estimator.LatestExporter('exporter', 
                                            make_tft_serving_input_fn(options['metadata_dir']))
 
-    train_input_fn = make_tfr_input_fn(
-        options['train_data_pattern'], shuffle_buffer_size=80000, 
-        batch_size=options['train_batch_size'], distribute=options['distribute'],
-        prefetch_buffer_size=options['prefetch_buffer_size'])
+#    train_input_fn = make_tfr_input_fn(
+#        options['train_data_pattern'], shuffle_buffer_size=80000, 
+#        batch_size=options['train_batch_size'], distribute=options['distribute'],
+#        prefetch_buffer_size=options['prefetch_buffer_size'])
 
-    eval_input_fn = make_tfr_input_fn(
-        options['eval_data_pattern'], 
-        batch_size=options['eval_batch_size'])  
+#    eval_input_fn = make_tfr_input_fn(
+#        options['eval_data_pattern'], 
+#        batch_size=options['eval_batch_size'])  
 
+    make_input_fn=make_input_fns()[options['file_format']]
+
+    train_input_fn = make_input_fn(options['train_data_pattern'], 
+                                   options['train_batch_size'],
+                                   options)    
+    eval_input_fn = make_input_fn(options['eval_data_pattern'], 
+                                  options['eval_batch_size'],
+                                  options)
+
+    
     train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn, max_steps=options['max_train_steps'])
     eval_spec = tf.estimator.EvalSpec(
         input_fn=eval_input_fn, exporters=exporter,

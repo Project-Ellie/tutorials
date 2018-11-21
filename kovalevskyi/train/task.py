@@ -64,6 +64,14 @@ if __name__ == '__main__':
         help = 'GCS patch glob pattern to evaluation data',
         required = True
     )
+    
+    parser.add_argument(
+        '--file_format',
+        help='File format. One of "csv", "tfr"',
+        type = str,
+        required = True
+    )
+    
     parser.add_argument(
         '--eval_batch_size',
         help = 'Batch size for evaluation steps',
@@ -149,6 +157,32 @@ if __name__ == '__main__':
         '--job-dir',
         help = 'this model ignores this field, but it is required by gcloud',
         default = 'junk'
+    )
+
+
+    parser.add_argument(
+        '--parser_num_threads',
+        help="Number of Parser threads to use",
+        type = int,
+        default=16
+    )    
+    parser.add_argument(
+        '--reader_num_threads',
+        help="Number of io reader threads to use",
+        type = int,
+        default=16
+    )
+    parser.add_argument(
+        '--shuffle_buffer_size',
+        help="Shuffle buffer size",
+        type = int,
+        default=10000
+    )
+    parser.add_argument(
+        '--sloppy_ordering',
+        help="Whether to allow non-deterministic ordering. Boosts performance",
+        type = bool,
+        default=True
     )
     
 
