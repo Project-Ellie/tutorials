@@ -7,20 +7,20 @@ def train_and_evaluate(options):
 
     #from train.make_input_fn import make_input_fn
     from train.make_tfr_input_fn import make_tfr_input_fn
+    from train.make_hypotheses import make_hypotheses
+
+    hypothesis = make_hypotheses()[options['hypothesis']]
     
     feature_columns = create_feature_columns()
     
-    if options['distribute']:
-        print("#####################################################################")
-        print("    Runnin in distibuted mode")
-        print("#####################################################################")
-        strategy=tf.contrib.distribute.MirroredStrategy()    
-        config = tf.estimator.RunConfig(model_dir=options['model_dir'], train_distribute=strategy)
-    else:
-        config = tf.estimator.RunConfig(model_dir=options['model_dir'])
+    strategy = tf.contrib.distribute.MirroredStrategy() if options['distribute'] else None
+    config = tf.estimator.RunConfig(model_dir=options['model_dir'], 
+                                    train_distribute=strategy, 
+                                    save_checkpoints_steps=options['save_checkpoints_steps'],
+                                    log_step_count_steps=options['log_step_count_steps'])
         
 
-    model_fn = make_model_fn(feature_columns, options)
+    model_fn = make_model_fn(feature_columns, options, hypothesis )
 
     estimator = tf.estimator.Estimator(
             config=config,
@@ -39,6 +39,10 @@ def train_and_evaluate(options):
         batch_size=options['eval_batch_size'])  
 
     train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn, max_steps=options['max_train_steps'])
-    eval_spec = tf.estimator.EvalSpec(input_fn=eval_input_fn, steps = options['eval_batch_size'], exporters=exporter)
+    eval_spec = tf.estimator.EvalSpec(
+        input_fn=eval_input_fn, exporters=exporter,
+        steps = options['eval_steps'],
+        throttle_secs=options['throttle_secs'],
+        start_delay_secs=0)
     
     tf.estimator.train_and_evaluate(estimator, train_spec=train_spec, eval_spec=eval_spec)

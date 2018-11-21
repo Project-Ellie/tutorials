@@ -128,3 +128,11 @@ def make_src_dumper(package):
             file.write(inspect.getsource(func))
         return "{} written to {}.".format(func.__name__, filename)
     return write_py
+
+def create_runpy(filename, args):
+    export = "export PYTHONPATH=${PYTHONPATH}:${PWD}\n"
+    python = "python -m train.task \\\n"
+    _args = "".join(['  --{}="{}"  \\\n'.format(key, value) for key, value in args.items() if value != False])
+    with open(filename, 'w') as f:
+        f.write(export+python+_args)
+    

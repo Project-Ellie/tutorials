@@ -76,7 +76,12 @@ if __name__ == '__main__':
         default = 10,
         type = int
     )
-
+    parser.add_argument(
+        '--eval_throttle',
+        help = 'number of seconds between two evaluations',
+        default = 10,
+        type = int
+    )
     # Training arguments
     parser.add_argument(
         '--learning_rate',
@@ -115,6 +120,30 @@ if __name__ == '__main__':
         default = 1024
     )
     
+    parser.add_argument(
+        '--throttle_secs',
+        help="evaluate every after this number of seconds, given a checkpoint is available.",
+        type = int,
+        default=30
+    )
+    parser.add_argument(
+        '--log_step_count_steps',
+        help="log current training loss every this number of steps",
+        type = int,
+        default = 1000
+    )
+    parser.add_argument(
+        '--hypothesis',
+        help="name of the hypothesis. Examine 'hypotheses.py' for a list of available names.",
+        type = str,
+        required=True
+    )
+    parser.add_argument(
+        '--save_checkpoints_steps',
+        help="number of steps to go until another check_point is created.",
+        type = int,
+        default = 2000
+    )        
     
     parser.add_argument(
         '--job-dir',

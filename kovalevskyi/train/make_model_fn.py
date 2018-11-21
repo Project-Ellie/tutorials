@@ -1,14 +1,11 @@
-def make_model_fn(feature_columns, options):
+def make_model_fn(feature_columns, options, hypothesis):
     
     import tensorflow as tf
     from train.make_hypothesis import make_hypothesis
     
     def _model_fn(features, labels, mode):
 
-        #############################################################
-        # This single line is the actual model
-        #############################################################
-        out = make_hypothesis(features, feature_columns, options)
+        out = hypothesis(features, feature_columns, options)
 
         if mode == tf.estimator.ModeKeys.PREDICT:
             return tf.estimator.EstimatorSpec(mode, predictions=out)

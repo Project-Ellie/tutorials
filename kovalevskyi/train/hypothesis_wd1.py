@@ -1,4 +1,4 @@
-def make_hypothesis(features, feature_columns, options):
+def hypothesis_wd1(features, feature_columns, options):
     
     import tensorflow as tf
 
