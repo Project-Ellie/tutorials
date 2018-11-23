@@ -140,6 +140,14 @@ if __name__ == '__main__':
         type = int,
         default = 1000
     )
+    
+    parser.add_argument(
+        '--save_summary_steps',
+        help="save summaries every after this number of steps",
+        type = int,
+        default = 100
+    )
+    
     parser.add_argument(
         '--hypothesis',
         help="name of the hypothesis. Examine 'hypotheses.py' for a list of available names.",

@@ -55,7 +55,8 @@ def train_and_evaluate(options):
     #   Create and configure the estimator
     ##################################################################
     strategy = MirroredStrategy() if options['distribute'] else None
-    config = RunConfig(model_dir=options['model_dir'], 
+    config = RunConfig(model_dir=options['model_dir'],
+                       save_summary_steps=options['save_summary_steps'],
                        train_distribute=strategy, 
                        save_checkpoints_steps=options['save_checkpoints_steps'],
                        log_step_count_steps=options['log_step_count_steps'])

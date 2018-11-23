@@ -25,6 +25,12 @@ def make_model_fn(feature_columns, options, hypothesis):
             optimizer = tf.train.GradientDescentOptimizer(options['learning_rate'])
             train_op = optimizer.minimize(loss, global_step=tf.train.get_or_create_global_step())
 
+            grads = optimizer.compute_gradients(loss)
+            for g in grads:
+                name = "%s-grad" % g[1].name
+                name = name.replace(":", "_")
+                tf.summary.histogram(name, g[0])
+            
             return tf.estimator.EstimatorSpec(  
                 mode,
                 loss = loss,
