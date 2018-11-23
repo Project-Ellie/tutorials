@@ -13,12 +13,13 @@ def make_model_fn(feature_columns, options, hypothesis):
 
         labels = tf.expand_dims(labels, -1)
         loss = tf.losses.mean_squared_error(labels, out)
+        mean_error=tf.metrics.mean(tf.abs(labels-out))
 
         if mode == tf.estimator.ModeKeys.EVAL:    
             return tf.estimator.EstimatorSpec(
                 mode=mode,
                 loss = loss,
-                #eval_metric_ops={'my_metric': }
+                eval_metric_ops={'mean_error': mean_error}
             )
 
         else:

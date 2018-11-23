@@ -15,7 +15,7 @@ python -m train.task \
   --learning_rate="0.001"  \
   --hypothesis="linear"  \
   --save_summary_steps="100"  \
-  --max_train_steps="5000"  \
+  --max_train_steps="2000"  \
   --prefetch_buffer_size="10000"  \
   --metadata_dir="gs://going-tfx/samples/metadata"  \
   --train_data_pattern="gs://going-tfx/samples/train_data/atl_june_tfr*"  \
