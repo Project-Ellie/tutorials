@@ -12,6 +12,7 @@ python -m train.task \
   --log_step_count_steps="200"  \
   --model_dir="gs://going-tfx/samples/model"  \
   --throttle_secs="30"  \
+  --optimizer="sgd1"  \
   --learning_rate="0.001"  \
   --hypothesis="linear"  \
   --save_summary_steps="100"  \

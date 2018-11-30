@@ -29,190 +29,88 @@ tf.logging.set_verbosity(tf.logging.INFO)
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
-    # Input Arguments
-    parser.add_argument(
-        '--base_dir',
-        help = 'base_dir from which to interpret all other relative paths',
-        required = True
-    )
-    parser.add_argument(
-        '--metadata_dir',
-        help = 'base_dir from which to interpret all other relative paths',
-        required = True
-    )
+    # File specifications
+    parser.add_argument('--base_dir', required = True,
+        help = 'base_dir from which to interpret all other relative paths')
     
-    parser.add_argument(
-        '--train_data_pattern',
-        help = 'GCS path glob pattern to training data',
-        required = True
-    )
-    parser.add_argument(
-        '--train_batch_size',
-        help = 'Batch size for training steps',
-        type = int,
-        default = 512
-    )
-    parser.add_argument(
-        '--max_train_steps',
-        help = 'Max num steps to run the training job up to',
-        type = int,
-        default = 5000
-    )
+    parser.add_argument('--metadata_dir',required=True,
+        help = 'base_dir from which to interpret all other relative paths')
+    
+    parser.add_argument('--train_data_pattern',required = True,
+        help = 'GCS path glob pattern to training data')
+    
+    parser.add_argument('--eval_data_pattern', required=True,
+        help = 'GCS patch glob pattern to evaluation data')
+    
+    parser.add_argument('--file_format', required=True,
+        help='File format. One of "csv", "tfr"')
+    
+    parser.add_argument('--model_dir', required=True,
+        help = 'GCS location to write checkpoints and export models')
 
-    parser.add_argument(
-        '--eval_data_pattern',
-        help = 'GCS patch glob pattern to evaluation data',
-        required = True
-    )
     
-    parser.add_argument(
-        '--file_format',
-        help='File format. One of "csv", "tfr"',
-        type = str,
-        required = True
-    )
+    # Hyperparameters
+    parser.add_argument('--train_batch_size', default=512, type=int,
+        help = 'Batch size for training steps')
     
-    parser.add_argument(
-        '--eval_batch_size',
-        help = 'Batch size for evaluation steps',
-        type = int,
-        default = 512
-    )
-    parser.add_argument(
-        '--eval_steps',
-        help = 'Number of steps to run evalution for at each checkpoint',
-        default = 10,
-        type = int
-    )
-    parser.add_argument(
-        '--eval_throttle',
-        help = 'number of seconds between two evaluations',
-        default = 10,
-        type = int
-    )
-    # Training arguments
-    parser.add_argument(
-        '--learning_rate',
-        help = 'How long to wait before running first evaluation',
-        default = 1e-4,
-        type = float
-    )
-    parser.add_argument(
-        '--nbuckets',
-        help = 'Number of buckets into which to discretize lats and lons',
-        default = 10,
-        type = int
-    )
-    parser.add_argument(
-        '--hidden_units',
-        help = 'Hidden layer sizes to use for DNN feature columns -- provide space-separated layers',
-        type = str,
-        default = "128 32 4"
-    )
-    parser.add_argument(
-        '--model_dir',
-        help = 'GCS location to write checkpoints and export models',
-        required = True
-    )
+    parser.add_argument('--max_train_steps', default=5000, type=int,
+        help = 'Max num steps to run the training job up to')
     
-    
-    parser.add_argument(
-        '--distribute',
-        help = 'boolean. Whether or not to distribute between GPUs',
-        type = bool
-    )
-    parser.add_argument(
-        '--prefetch_buffer_size',
-        help = 'how many batches to pre-fetch into GPU memory',
-        type = int,
-        default = 1024
-    )
-    
-    parser.add_argument(
-        '--throttle_secs',
-        help="evaluate every after this number of seconds, given a checkpoint is available.",
-        type = int,
-        default=30
-    )
-    parser.add_argument(
-        '--log_step_count_steps',
-        help="log current training loss every this number of steps",
-        type = int,
-        default = 1000
-    )
-    
-    parser.add_argument(
-        '--save_summary_steps',
-        help="save summaries every after this number of steps",
-        type = int,
-        default = 100
-    )
-    
-    parser.add_argument(
-        '--hypothesis',
-        help="name of the hypothesis. Examine 'hypotheses.py' for a list of available names.",
-        type = str,
-        required=True
-    )
-    parser.add_argument(
-        '--save_checkpoints_steps',
-        help="number of steps to go until another check_point is created.",
-        type = int,
-        default = 2000
-    )        
-    
-    parser.add_argument(
-        '--job-dir',
-        help = 'this model ignores this field, but it is required by gcloud',
-        default = 'junk'
-    )
+    parser.add_argument('--learning_rate', default=1e-4, type=float,
+        help = 'How long to wait before running first evaluation')
 
+    parser.add_argument( '--nbuckets', default=10, type=int,
+        help = 'NOT USED. Number of buckets into which to discretize lats and lons')
 
-    parser.add_argument(
-        '--parser_num_threads',
-        help="Number of Parser threads to use",
-        type = int,
-        default=16
-    )    
-    parser.add_argument(
-        '--reader_num_threads',
-        help="Number of io reader threads to use",
-        type = int,
-        default=16
-    )
-    parser.add_argument(
-        '--shuffle_buffer_size',
-        help="Shuffle buffer size",
-        type = int,
-        default=10000
-    )
-    parser.add_argument(
-        '--sloppy_ordering',
-        help="Whether to allow non-deterministic ordering. Boosts performance",
-        type = bool,
-        default=True
-    )
+    parser.add_argument('--hidden_units', default = '128 32 4', 
+        help = 'NOT USED: Hidden layer sizes to use for deep networks')
+
+    parser.add_argument('--optimizer', default = 'sgd',
+        help = 'Optimizer to be used, one of "sgd", "adam", "adagrad"')
     
+    # Execution parameters
+    parser.add_argument('--eval_batch_size', default=512, type=int,
+        help = 'Batch size for evaluation steps')
+    
+    parser.add_argument('--eval_steps', default=10, type=int,
+        help = 'Number of steps to run evalution for at each checkpoint')
+    
+    parser.add_argument('--throttle_secs', default=30, type=int,
+        help = 'number of seconds between two evaluations')
 
-    def not_now():
-        # Eval arguments
-        parser.add_argument(
-            '--eval_delay_secs',
-            help = 'How long to wait before running first evaluation',
-            default = 10,
-            type = int
-        )
-        parser.add_argument(
-            '--min_eval_frequency',
-            help = 'Minimum number of training steps between evaluations',
-            default = 1,
-            type = int
-        )
-        parser.add_argument(
-            '--format',
-            help = 'Is the input data format csv or tfrecord?',
-            default = 'csv'
-        )
+    parser.add_argument('--distribute', type=bool,
+        help = 'boolean. Whether or not to distribute between GPUs')
+    
+    parser.add_argument('--prefetch_buffer_size', default=1024, type=int,
+        help = 'how many batches to pre-fetch into GPU memory')
+    
+    parser.add_argument('--log_step_count_steps', default=1000, type=int,
+        help="log current training loss every this number of steps")
+    
+    parser.add_argument('--save_summary_steps', default=100, type=int,
+        help="save summaries every after this number of steps")
+    
+    parser.add_argument('--hypothesis', required=True, type=str,
+        help="name of the hypothesis. Examine 'hypotheses.py' for a list of available hypotheses.")
+    
+    parser.add_argument('--save_checkpoints_steps', default=2000, type=int,
+        help="number of steps to go until another check_point is created.")        
+    
+    parser.add_argument('--parser_num_threads', default=16, type=int,
+        help="Number of Parser threads to use")
+    
+    parser.add_argument('--reader_num_threads', default=16, type=int,
+        help="Number of io reader threads to use")
+    
+    parser.add_argument('--shuffle_buffer_size', default=10000, type=int,
+        help="Shuffle buffer size")
+    
+    parser.add_argument('--sloppy_ordering', default=True, type=bool,
+        help="Whether to allow non-deterministic ordering. Boosts performance")
+    
+    parser.add_argument('--job-dir', default='whatever',
+        help = 'this model ignores this field, but it is required by gcloud')
+
 
     args = parser.parse_args()
     arguments = args.__dict__
@@ -234,6 +132,7 @@ if __name__ == '__main__':
         print("###############################################################")
         print("       Running distributed!")
         print("###############################################################")
+
     # Run the training job:
     try:
         train_and_evaluate(join_paths(arguments))

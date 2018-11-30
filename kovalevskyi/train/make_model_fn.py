@@ -3,6 +3,12 @@ def make_model_fn(feature_columns, options, hypothesis):
     import tensorflow as tf
     from train.make_hypothesis import make_hypothesis
     
+    optimizers={
+        "sgd1": tf.train.GradientDescentOptimizer(learning_rate=options['learning_rate']),
+        "adam": tf.train.AdamOptimizer(learning_rate=options['learning_rate']),
+        "adagrad": tf.train.AdagradOptimizer(learning_rate=options['learning_rate'])
+    }
+    
     def _model_fn(features, labels, mode):
 
         out = hypothesis(features, feature_columns, options)
@@ -23,7 +29,9 @@ def make_model_fn(feature_columns, options, hypothesis):
             )
 
         else:
-            optimizer = tf.train.GradientDescentOptimizer(options['learning_rate'])
+            #optimizer = tf.train.GradientDescentOptimizer(options['learning_rate'])
+            print("Using %s optimizer." % options['optimizer'])
+            optimizer = optimizers[options['optimizer']]
             train_op = optimizer.minimize(loss, global_step=tf.train.get_or_create_global_step())
 
             grads = optimizer.compute_gradients(loss)

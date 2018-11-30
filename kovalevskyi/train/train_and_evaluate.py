@@ -90,7 +90,8 @@ def train_and_evaluate(options):
             train_spec=train_spec, 
             eval_spec=eval_spec)
         
-        mlflow.log_metric('loss', final_eval[0]['loss'])
-        mlflow.log_metric('mean_error', final_eval[0]['mean_error'])
+        if final_eval[0] is not None:
+            mlflow.log_metric('loss', final_eval[0]['loss'])
+            mlflow.log_metric('mean_error', final_eval[0]['mean_error'])
 
         return final_eval
