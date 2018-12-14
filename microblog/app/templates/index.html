@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}
+{{ title }} - Microblog</title>
+{% endblock %}
+        
+{% block content %}
+<nav class="navbar navbar-light bg-light">
+    <span class="navbar-brand mb-0 h1">Microblog: </span>
+    <a class="navbar-brand" href="#">Home</a>
+</nav>
+<h1>Hello, {{ user.username }}!</h1>
+        
+
+{% endblock %}

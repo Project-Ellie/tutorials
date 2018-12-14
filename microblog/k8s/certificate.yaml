@@ -1,0 +1,19 @@
+apiVersion: certmanager.k8s.io/v1alpha1
+kind: Certificate
+metadata:
+  name: microblog-fnf-ninja-tls
+  namespace: default
+spec:
+  secretName: microblog-fnf-ninja-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  commonName: microblog.fnf.ninja
+  dnsNames:
+  - microblog.fnf.ninja
+  acme:
+    config:
+    - http01:
+        ingress: fanout-ingress
+      domains:
+      - microblog.fnf.ninja

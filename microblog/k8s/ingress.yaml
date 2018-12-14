@@ -1,0 +1,21 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: fanout-ingress
+  annotations:
+    certmanager.k8s.io/cluster-issuer: letsencrypt-prod
+    kubernetes.io/ingress.global-static-ip-name: microblog
+  labels:
+    app: microblog
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /
+        backend:
+          serviceName: microblog
+          servicePort: 5000
+  tls:
+  - hosts:
+    - microblog.fnf.ninja
+    secretName: microblog-fnf-ninja
