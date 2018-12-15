@@ -20,7 +20,7 @@ $ git clone https://github.com/Project-Ellie/tutorials
 $ jupyter-lab --config=tutorials/jupyter_notebook_config.py
 ```
 
-Open a [cloud shell]:(https://cloud.google.com/shell/docs/quickstart)
+Open a [cloud shell](https://cloud.google.com/shell/docs/quickstart).
 
 On that shell, create an ssh tunnel to your jupyter lab server
 ```
