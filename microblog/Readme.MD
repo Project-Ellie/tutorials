@@ -30,6 +30,10 @@ curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
 sudo apt-get update && sudo apt-get install -y google-cloud-sdk
 sudo apt-get install -y kubectl
 
+# choose your preferred region and the service account when prompted
+gcloud init
+gcloud auth configure-docker
+
 # docker
 sudo apt-get install -y apt-transport-https ca-certificates curl gnupg2 software-properties-common
 curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
@@ -45,7 +49,7 @@ Open a [cloud shell](https://cloud.google.com/shell/docs/quickstart).
 
 On that shell, create an ssh tunnel to your jupyter lab server
 ```
-$ gcloud compute ssh microblog-dev --zone=us-central1-a -- -L 8081:localhost:8081
+$ gcloud compute ssh microblog-dev --zone=us-central1-a -- -L 8081:https://8081-dot-3671231-dot-devshell.appspot.com
 ```
 Open a web preview on Port 8081 and enjoy the warm welcome of your fresh jupyter lab environment. Navigate to tutorials/microblog and open Tutorial.ipynb. Continue from there. 
 
