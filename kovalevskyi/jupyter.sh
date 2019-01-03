@@ -1,4 +1,4 @@
-if [ "" = "$WORKSPACE" ]
+    if [ "" = "$WORKSPACE" ]
 then
 	echo "WORKSPACE variable not set"
 	echo "WORKSPACE must point to the directory containing the cloned git repo"
@@ -34,4 +34,4 @@ then
 else
 	source ~/py2/bin/activate
 fi
-jupyter-lab --config=${SRC_DIR}/jupyter_notebook_config.py
+PYTHONHASHSEED=0 jupyter-lab --config=${SRC_DIR}/jupyter_notebook_config.py
