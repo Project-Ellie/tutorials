@@ -6,7 +6,7 @@ metadata:
 spec:
   secretName: microblog-fnf-ninja-tls
   issuerRef:
-    name: letsencrypt-prod
+    name: letsencrypt-staging
     kind: ClusterIssuer
   commonName: microblog.fnf.ninja
   dnsNames:
@@ -14,6 +14,6 @@ spec:
   acme:
     config:
     - http01:
-        ingress: fanout-ingress
+        ingress: microblog-ingress-http01
       domains:
       - microblog.fnf.ninja

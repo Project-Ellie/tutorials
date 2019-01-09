@@ -1,0 +1,16 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: microblog-ingress-http01
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: microblog
+  labels:
+    app: microblog
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /
+        backend:
+          serviceName: microblog
+          servicePort: 5000
