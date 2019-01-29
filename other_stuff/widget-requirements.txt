@@ -1,0 +1,8 @@
+cufflinks
+plotly
+pyarrow
+ipywidgets
+jupyterlab
+pandas
+seaborn
+scipy
