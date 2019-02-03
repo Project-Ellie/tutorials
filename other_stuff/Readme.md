@@ -1,6 +1,7 @@
 ## Interactive Widgets for Jupyter
 
-requires python3
+requires python3, nodejs, npm. 
+```$ sudo apt-get install python3 nodejs npm```
 
 Install requirements
 
