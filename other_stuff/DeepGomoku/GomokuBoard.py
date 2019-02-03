@@ -32,7 +32,7 @@ class GomokuBoard:
         d = max(0, min(4, d))
         return self.color_scheme[int(o)][int(d)]
     
-    def display(self, score=False, stones=None):
+    def display(self, score='current', stones=None):
         stones = stones or self.stones
         side=self.side
         size=self.size
@@ -51,7 +51,7 @@ class GomokuBoard:
         if self.cursor >= 0:
             self.display_stones(stones, axis)
         if score:
-            self.display_score(axis)
+            self.display_score(axis, score)
 
     def display_helpers(self, axis):
         if self.size==15:
@@ -85,11 +85,11 @@ class GomokuBoard:
         return 150 / self.size * self.side**2
         
 
-    def display_score(self, axis):
+    def display_score(self, axis, score):
         for x in range(1, self.size+1):
             for y in range(1, self.size+1):
 
-                c = self.next_party
+                c = self.next_party if score == 'current' else score
                 tso, tsd = self.get_scores(c, x, y)
                 
                 if (tsd > self.bias or tso > self.bias): #and (x,y) not in self.stones:
