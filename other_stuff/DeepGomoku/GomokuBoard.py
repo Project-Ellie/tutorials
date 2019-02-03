@@ -12,6 +12,7 @@ class GomokuBoard:
         self.cursor = -1
         self.heuristics = heuristics
         self.next_party='b'
+        self.stats =  {'b': [], 'w': []}
         self.ns = [[N_9x9() for i in range(self.size)] for j in range(self.size)]
         #c = 'w'
         self.set_all(stones)
@@ -47,7 +48,7 @@ class GomokuBoard:
         ylines = np.reshape(xlines + ylines, [-1])
         axis.plot(*ylines)
         self.display_helpers(axis)
-        if self.cursor > 0:
+        if self.cursor >= 0:
             self.display_stones(stones, axis)
         if score:
             self.display_score(axis)
@@ -57,7 +58,16 @@ class GomokuBoard:
             axis.scatter([4, 4, 12, 12, 8], [4, 12, 12, 4, 8], s=self.side**2, c='#E0E0E0')
         elif self.size==20:
             axis.scatter([6, 6, 15, 15], [6, 15, 15, 6], s=self.side**2, c='#E0E0E0')
-        
+
+            
+    def display_cursor(self):
+        x,y = self.stones[self.cursor]
+        box = np.array(
+            [[-0.6,  0.6,  0.6, -0.6, -0.6],
+            [-0.6, -0.6,  0.6,  0.6, -0.6]])
+        box = box + [[x], [y]]
+        plt.plot(*box, color='w', zorder=30)
+            
             
     def display_stones(self, stones, axis):
         colors=['white', 'black']
@@ -66,27 +76,41 @@ class GomokuBoard:
             stc = colors[i % 2]
             fgc = colors[1 - i % 2]
             axis.scatter([x],[y], c=stc, s=self.stones_size(), zorder=10);
+            self.display_cursor()
             plt.text(x, y, i, color=fgc, fontsize=12, zorder=20,
                      horizontalalignment='center', verticalalignment='center');
 
+            
     def stones_size(self):
         return 150 / self.size * self.side**2
-            
-    def display_score(self, axis):
+        
+
+    def get_scores(self, c, x, y):
         h = self.heuristics
+        n = self.getn9x9(x,y)                                
+        fof = 0 if c=='b' else 1
+        tso = h.total_score(n.as_bits(), fof=fof)
+        tsd = h.total_score(n.as_bits(), fof=1-fof)
+        return tso, tsd        
+        
+        
+    def display_score(self, axis):
         for x in range(1, self.size+1):
             for y in range(1, self.size+1):
-                n = self.getn9x9(x,y)                
-                tso = h.total_score(n.as_bits(), fof=0)
-                tsd = h.total_score(n.as_bits(), fof=1)
+
+                c = self.next_party
+                tso, tsd = self.get_scores(c, x, y)
+                
                 if (tsd > self.bias or tso > self.bias): #and (x,y) not in self.stones:
                     c = self.color_for(offensive=tso, defensive=tsd)
                     axis.scatter([x],[y], color=c, s=2*self.side**2, zorder=5)
         
+        
     def set_all(self, stones):
         for stone in stones:
             self.set(*stone)
-            
+        
+        
     def ctoggle(self):
         """
         toggle current color
@@ -108,9 +132,12 @@ class GomokuBoard:
         self.stones.append((x,y))
         
         c = self.next_party
-        self.ctoggle()
+        c_next = self.ctoggle()
         self.cursor = len(self.stones)-1
         self.comp_ns(c, x, y, 'r')
+        self.add_stats(c_next)
+        
+        return self
             
     def undo(self):
         if self.cursor != len(self.stones)-1:
@@ -121,20 +148,33 @@ class GomokuBoard:
         self.stones = self.stones[:-1]
         self.cursor = len(self.stones)-1
         self.comp_ns(c, *stone, action='u')
+        self.stats[c] = self.stats[c][:-1]
+        return self
             
-    def fwd(self):
+    def fwd(self, n=1):
+        if ( n > 1 ):
+            self.fwd()
+            self.fwd(n-1)
+            return self
         if self.cursor < len(self.stones)-1:
             self.cursor += 1
             c = self.next_party
             self.ctoggle()
             self.comp_ns(c, *self.stones[self.cursor], action='r')
+        return self
             
-    def bwd(self):
+    def bwd(self, n=1):
+        if ( n > 1 ):
+            self.bwd()
+            self.bwd(n-1)
+            return self
+            
         if self.cursor >= 0:
             stone = self.stones[self.cursor]
             self.cursor -= 1
             c = self.ctoggle()
             self.comp_ns(c, *stone, action='u')
+        return self
             
             
     def getn9x9(self, x,y):
@@ -169,3 +209,22 @@ class GomokuBoard:
         """
         return index[0] >= 0 and index[0] < self.size and index[1] >= 0 and index[1] < self.size
     
+
+    def calc_stats(self, c):
+        N = len(self.stones)
+        scores = [self.get_scores(c, x, y) 
+                  for x in range(1, self.size+1)
+                  for y in range(1, self.size+1)]
+        stats = { 
+            'avg_o': sum([s[0] for s in scores]) / N,
+            'gsum_o': np.sqrt(sum([s[0]**2 for s in scores])),
+            'max_o': max([s[0] for s in scores]),
+            'avg_d': sum([s[1] for s in scores]) / N,
+            'gsum_d': np.sqrt(sum([s[1]**2 for s in scores])),
+            'max_d': max([s[1] for s in scores]),
+        }
+        return stats
+    
+    
+    def add_stats(self, c):
+        self.stats[c].append(self.calc_stats(c))
