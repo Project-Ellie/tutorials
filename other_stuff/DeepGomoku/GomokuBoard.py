@@ -85,15 +85,6 @@ class GomokuBoard:
         return 150 / self.size * self.side**2
         
 
-    def get_scores(self, c, x, y):
-        h = self.heuristics
-        n = self.getn9x9(x,y)                                
-        fof = 0 if c=='b' else 1
-        tso = h.total_score(n.as_bits(), fof=fof)
-        tsd = h.total_score(n.as_bits(), fof=1-fof)
-        return tso, tsd        
-        
-        
     def display_score(self, axis):
         for x in range(1, self.size+1):
             for y in range(1, self.size+1):
@@ -209,7 +200,16 @@ class GomokuBoard:
         """
         return index[0] >= 0 and index[0] < self.size and index[1] >= 0 and index[1] < self.size
     
-
+ 
+    def get_scores(self, c, x, y):
+        h = self.heuristics
+        n = self.getn9x9(x,y)                                
+        fof = 0 if c=='b' else 1
+        tso = h.total_score(n.as_bits(), fof=fof)
+        tsd = h.total_score(n.as_bits(), fof=1-fof)
+        return tso, tsd               
+           
+    
     def calc_stats(self, c):
         N = len(self.stones)
         scores = [self.get_scores(c, x, y) 
@@ -217,10 +217,10 @@ class GomokuBoard:
                   for y in range(1, self.size+1)]
         stats = { 
             'avg_o': sum([s[0] for s in scores]) / N,
-            'gsum_o': np.sqrt(sum([s[0]**2 for s in scores])),
+            'gsum_o': 0, #np.sqrt(sum([s[0]**2 for s in scores])),
             'max_o': max([s[0] for s in scores]),
             'avg_d': sum([s[1] for s in scores]) / N,
-            'gsum_d': np.sqrt(sum([s[1]**2 for s in scores])),
+            'gsum_d': 0,# np.sqrt(sum([s[1]**2 for s in scores])),
             'max_d': max([s[1] for s in scores]),
         }
         return stats
