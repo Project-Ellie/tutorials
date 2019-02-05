@@ -202,13 +202,48 @@ class GomokuBoard:
     
  
     def get_scores(self, c, x, y):
+        """
+        Compute the scores from c's point of view
+        Returns:
+        A pair (offensive score, defensive score)
+        """
+        all_edges = self.all_edges(x,y)
+
         h = self.heuristics
         n = self.getn9x9(x,y)                                
         fof = 0 if c=='b' else 1
-        tso = h.total_score(n.as_bits(), fof=fof)
-        tsd = h.total_score(n.as_bits(), fof=1-fof)
+        tso = h.total_score(n.as_bits(), fof=fof, all_edges=all_edges)
+        tsd = h.total_score(n.as_bits(), fof=1-fof, all_edges=all_edges)
         return tso, tsd               
-           
+
+    
+    def edges(self, p):
+        N = self.size
+        return (4-p, None) if p<5 else (None, N+4-p) if p > N-4 else (None,None)
+    
+    def emax(self, x1, x2):
+        return x1 if x2 is None else x2 if x1 is None else max(x1, x2)
+
+    def emin(self, x1, x2):
+        return x1 if x2 is None else x2 if x1 is None else min(x1, x2)    
+    
+    def ne_edges(self, x, y):
+        e_x = self.edges(x)
+        e_y = self.edges(y)
+        return self.emax(e_x[0], e_y[0]), self.emin(e_x[1], e_y[1])    
+
+    def nw_edges(self, x,y):
+        e_x = self.edges(16-x)
+        e_y = self.edges(y)
+        return self.emax(e_x[0], e_y[0]), self.emin(e_x[1], e_y[1])    
+
+    def all_edges(self, x, y):
+        return [
+            self.edges(x), 
+            self.ne_edges(x,y), 
+            self.edges(y), 
+            self.nw_edges(x,y)]    
+    
     
     def calc_stats(self, c):
         N = len(self.stones)
