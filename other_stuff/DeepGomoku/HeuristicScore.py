@@ -40,10 +40,10 @@ class HeuristicScore:
         fr = self.f_range(line, fof, edges)
         counts = []
         for i in range(len(fr)-3):
-            counts.append(sum(fr[i:i+5]))            
+            counts.append(sum(fr[i:i+4]))            
         m = max(counts) if counts else 0
         c = sum(np.array(counts) == max(counts)) if counts else 0
-        c = min(c,2)
+        c = min(c,3)
         return (m, c)
     
 
