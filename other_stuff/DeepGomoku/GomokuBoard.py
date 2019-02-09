@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from GomokuTools import GomokuTools, N_9x9
 from HeuristicScore import HeuristicScore
@@ -28,8 +29,8 @@ class GomokuBoard:
         
     
     def color_for(self, offensive, defensive):
-        o = (offensive - self.bias) * 5 / (5-offensive)
-        d = (defensive - self.bias) * 5 / (5-defensive)
+        o = (offensive - self.bias) * 5 / max((5-offensive),0.01)
+        d = (defensive - self.bias) * 5 / max((5-defensive),0.01)
         o = max(0, min(4, o))
         d = max(0, min(4, d))
         return self.color_scheme[int(o)][int(d)]
@@ -304,3 +305,9 @@ class GomokuBoard:
     
     def add_stats(self, c):
         self.stats[c].append(self.calc_stats(c))
+        
+    
+    def save(self, filename):
+        df = pd.DataFrame(self.stones)
+        df.to_csv(filename, header=None, index=None)
+        

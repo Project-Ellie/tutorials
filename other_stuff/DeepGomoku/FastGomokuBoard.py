@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from GomokuBoard import GomokuBoard
 from LineScores import LineScoresHelper
 from HeuristicScore import HeuristicScore
@@ -105,10 +106,11 @@ class FastGomokuBoard(GomokuBoard):
         foe |= self.boundary_mask(x, y)
 
         lines = [
-            [(nh & (0xFF << 8*direction)) >> 8*direction for nh in (friend, foe)] 
+            [(nh & (0xFF << 8*direction)) >> 8*direction for nh in (b, w)] 
             for direction in range(4)]
+        #print(b, w, c, lines)
         
-        cscores_and_scores = [self.lsh.lookup_score(line) for line in lines]
+        cscores_and_scores = [self.lsh.lookup_score(line, c) for line in lines]
         return [[cas[i] for cas in cscores_and_scores] for i in range(2)]
         
         
@@ -129,3 +131,7 @@ class FastGomokuBoard(GomokuBoard):
             mask |= rhs | lhs
         return mask
         
+    @staticmethod        
+    def from_csv(filename, size=19, disp_width=10):
+        stones = pd.read_csv(filename, header=None).values.tolist()
+        return FastGomokuBoard( size, disp_width, stones=stones, h=HeuristicScore())

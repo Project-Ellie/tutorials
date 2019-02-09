@@ -84,8 +84,8 @@ class N_9x9:
     """
 
     
-    def __init__(self):
-        self.ba = bytearray(8)
+    def __init__(self, ba=bytearray(8)):
+        self.ba = ba.copy()
 
         
     @staticmethod

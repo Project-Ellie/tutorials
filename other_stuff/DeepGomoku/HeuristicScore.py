@@ -1,7 +1,7 @@
 import numpy as np
 class HeuristicScore:
     
-    def __init__(self, kappa0=2, kappa1=5):
+    def __init__(self, kappa0=3, kappa1=5):
         self.kappa0 = kappa0
         self.kappa1 = kappa1
         
