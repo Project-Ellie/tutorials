@@ -9,7 +9,7 @@ class GomokuBoard:
         self.side=disp_width
         self.stones=[]
         self.heuristics = heuristics
-        self.current_color = 0 #next_party='b'
+        self.current_color = 0 
         self.ns = [[N_9x9() for i in range(self.size)] for j in range(self.size)]
         self.init_constants()
         self.set_all(stones)
@@ -60,6 +60,8 @@ class GomokuBoard:
     def display_helpers(self, axis):
         if self.size==15:
             axis.scatter([4, 4, 12, 12, 8], [4, 12, 12, 4, 8], s=self.side**2, c='#E0E0E0')
+        elif self.size==19:
+            axis.scatter([4, 4, 4, 10, 16, 16, 16, 10, 10], [4, 10, 16, 16, 16, 10, 4, 4, 10], s=self.side**2, c='#E0E0E0')
         elif self.size==20:
             axis.scatter([6, 6, 15, 15], [6, 15, 15, 6], s=self.side**2, c='#E0E0E0')
 
@@ -84,6 +86,19 @@ class GomokuBoard:
             plt.text(x, y, i, color=fgc, fontsize=12, zorder=20,
                      horizontalalignment='center', verticalalignment='center');
 
+                
+    def display_best(self, axis):        
+        otop = self.top(1)[0][0][0]
+        dtop = self.top(1)[1][0][0]
+        odtop = self.top(1)[2][0][0]
+        ocircle = plt.Circle(otop, .4, color='#00ff00', lw=2, fill=False)
+        dcircle = plt.Circle(dtop, .4, color='#ff0000', lw=2, fill=False)
+        odcircle = plt.Circle(odtop, .4, color='#ffff00', lw=2, fill=False)
+        axis.add_artist(ocircle)
+        axis.add_artist(dcircle)
+        axis.add_artist(odcircle)
+
+        
             
     def stones_size(self):
         return 150 / self.size * self.side**2
@@ -99,6 +114,8 @@ class GomokuBoard:
                 if (tsd > self.bias or tso > self.bias): #and (x,y) not in self.stones:
                     c = self.color_for(offensive=tso, defensive=tsd)
                     axis.scatter([x],[y], color=c, s=2*self.side**2, zorder=5)
+                    
+        self.display_best(axis)
         
         
     def set_all(self, stones):
@@ -219,6 +236,27 @@ class GomokuBoard:
         tsd = h.total_score(n.as_bits(), c=1-c, all_edges=all_edges)
         return tso, tsd               
 
+    def top(self, n):
+        from operator import itemgetter
+        o_scores=[]
+        d_scores=[]
+        od_scores=[]
+        for x in range(1, self.size+1):
+                for y in range(1, self.size+1):
+                    if (x,y) not in self.stones[:self.cursor+1]:
+                        score = self.get_scores(c=self.current_color, x=x, y=y)
+                        o_scores.append([(x,y), score[0]])
+                        d_scores.append([(x,y), score[1]])
+                        od_scores.append([(x,y), score[0] + score[1]])
+                        
+        otopn=sorted(o_scores, key=itemgetter(1))[-n:]
+        dtopn=sorted(d_scores, key=itemgetter(1))[-n:]    
+        odtopn=sorted(od_scores, key=itemgetter(1))[-n:]    
+        otopn.reverse()
+        dtopn.reverse()
+        odtopn.reverse()
+        return otopn, dtopn, odtopn
+    
     
     def edges(self, p):
         N = self.size
