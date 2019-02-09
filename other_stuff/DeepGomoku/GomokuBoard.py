@@ -5,17 +5,19 @@ from HeuristicScore import HeuristicScore
 
 class GomokuBoard:
     def __init__(self, size, disp_width, stones=[], heuristics=HeuristicScore()):
-        self.bias = 1.3
         self.size=size
         self.side=disp_width
         self.stones=[]
-        self.cursor = -1
         self.heuristics = heuristics
-        self.next_party='b'
-        self.stats =  {'b': [], 'w': []}
+        self.current_color = 0 #next_party='b'
         self.ns = [[N_9x9() for i in range(self.size)] for j in range(self.size)]
-        #c = 'w'
+        self.init_constants()
         self.set_all(stones)
+        
+    def init_constants(self):
+        self.bias = 1.3
+        self.cursor = -1
+        self.stats =  [[],[]]
         self.color_scheme = [ # visualize the offensive/defensive score
             ['#F0F0F0', '#FFC0C0', '#FF9090', '#FF6060', '#FF0000'],
             ['#A0FFA0', '#E8D088', '#FFA080', '#F86040', '#F01808'],
@@ -23,7 +25,7 @@ class GomokuBoard:
             ['#00CF00', '#80B014', '#C0A048', '#E08050', '#D04820'],
             ['#00A000', '#307810', '#607020', '#907828', '#C06030']
         ]
-     
+        
     
     def color_for(self, offensive, defensive):
         o = (offensive - self.bias) * 5 / (5-offensive)
@@ -32,8 +34,7 @@ class GomokuBoard:
         d = max(0, min(4, d))
         return self.color_scheme[int(o)][int(d)]
     
-    def display(self, score='current', stones=None):
-        stones = stones or self.stones
+    def display(self, score='current'):
         side=self.side
         size=self.size
         fig, axis = plt.subplots(figsize=(side, side))
@@ -49,8 +50,11 @@ class GomokuBoard:
         axis.plot(*ylines)
         self.display_helpers(axis)
         if self.cursor >= 0:
-            self.display_stones(stones, axis)
-        if score:
+            self.display_stones(self.stones, axis)
+
+        if score is not None:
+            if score=='current':
+                score=self.current_color
             self.display_score(axis, score)
 
     def display_helpers(self, axis):
@@ -85,11 +89,11 @@ class GomokuBoard:
         return 150 / self.size * self.side**2
         
 
-    def display_score(self, axis, score):
+    def display_score(self, axis, score):        
         for x in range(1, self.size+1):
             for y in range(1, self.size+1):
 
-                c = self.next_party if score == 'current' else score
+                c = self.current_color if score == -1 else score
                 tso, tsd = self.get_scores(c, x, y)
                 
                 if (tsd > self.bias or tso > self.bias): #and (x,y) not in self.stones:
@@ -106,8 +110,8 @@ class GomokuBoard:
         """
         toggle current color
         """
-        self.next_party = 'b' if self.next_party == 'w' else 'w'
-        return self.next_party
+        self.current_color = 1 - self.current_color
+        return self.current_color
         
             
     def set(self, x,y):
@@ -122,7 +126,7 @@ class GomokuBoard:
             raise(ValueError("Not a valid move. Beyond board boundary."))
         self.stones.append((x,y))
         
-        c = self.next_party
+        c = self.current_color
         c_next = self.ctoggle()
         self.cursor = len(self.stones)-1
         self.comp_ns(c, x, y, 'r')
@@ -149,7 +153,7 @@ class GomokuBoard:
             return self
         if self.cursor < len(self.stones)-1:
             self.cursor += 1
-            c = self.next_party
+            c = self.current_color
             self.ctoggle()
             self.comp_ns(c, *self.stones[self.cursor], action='r')
         return self
@@ -211,9 +215,8 @@ class GomokuBoard:
 
         h = self.heuristics
         n = self.getn9x9(x,y)                                
-        fof = 0 if c=='b' else 1
-        tso = h.total_score(n.as_bits(), fof=fof, all_edges=all_edges)
-        tsd = h.total_score(n.as_bits(), fof=1-fof, all_edges=all_edges)
+        tso = h.total_score(n.as_bits(), c, all_edges=all_edges)
+        tsd = h.total_score(n.as_bits(), c=1-c, all_edges=all_edges)
         return tso, tsd               
 
     

@@ -32,6 +32,25 @@ class GomokuTools:
         """
         return [i[0] for i in GomokuTools.dirs().items() if (GomokuTools.dirs()[d][0] + 4) % 8 == i[1][0]][0]
 
+    @staticmethod    
+    def as_bits(byte):
+        return [np.sign(byte & (1<<i)) for i in range(7, -1, -1)]
+
+    @staticmethod
+    def as_bitarray(code):
+        # l3 is the nw-line. point 2,2 on that line sees the stone at a distance of 2
+        l=code
+        l0=(l & 0xFF)               # east
+        l1=(l & 0xFF00) >> 8        # north east
+        l2=(l & 0xFF0000) >> 16     # north
+        l3=(l & 0xFF000000) >> 24   # north west
+        return {
+            'e': GomokuTools.as_bits(l0),
+            'ne': GomokuTools.as_bits(l1),
+            'n': GomokuTools.as_bits(l2),
+            'nw': GomokuTools.as_bits(l3)
+        }
+
 
     
     
@@ -86,7 +105,7 @@ class N_9x9:
         """
 
         h_ = GomokuTools.dirs()[direction][0]
-        c_ = 1 if color=='w' else 0
+        c_ = color
         y=c_+2*(h_%4)
         x=4 - (h_//4) + (2*(h_//4)-1)*distance
         return x, y
@@ -97,7 +116,7 @@ class N_9x9:
         Register a stone at the given position
         
         Args:
-            color:     'b' or 'w'
+            color:     0 for black, 1 for white
             direction: any of 'e', 'ne',...
             distance:  distance from the center: any of 1, 2, 3, 4
 
@@ -116,15 +135,15 @@ class N_9x9:
     def setline(self, h, array12):
         for i in range(8):
             s = array12[i]
-            c = 'w' if s==2 else 'b' if s==1 else '' if s==0 else s
-            if c:
+            c = 1 if s==2 else 0 if s==1 else None
+            if c is not None:
                 h_ = h if i//4 else GomokuTools.opposite(h)
                 d = i-3 if i//4 else 4-i
                 self.register(c, h_, d)
         return self
     
     def bits_in_line(self, h):
-        _, y = N_9x9.xy('b', h, 1)
+        _, y = N_9x9.xy(0, h, 1)
         h_ = GomokuTools.dirs()[h][0]
         r = range(8) if h_//4 else range(7, -1, -1)
         return [ 
@@ -148,3 +167,5 @@ class N_9x9:
                 row, col = pos0 + (x + x//4) *np.array(step)
                 field[row][col]='x' if bits[0][x] == 1 else 'o' if bits[1][x] == 1 else ' '                
         return "\n".join([('|' + ' '.join(field[r]) + '|') for r in range(9)])
+
+    

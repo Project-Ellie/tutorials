@@ -1,9 +1,9 @@
 import numpy as np
-
+from HeuristicScore import HeuristicScore
 
 class LineScoresHelper:
 
-    def __init__(self, heuristics):
+    def __init__(self, heuristics=HeuristicScore()):
         self.heuristics = heuristics
 
         self.lm = [240, 0, 16, 0, 48, 0, 16, 0, 112, 0, 16, 0, 48, 0, 16, 0]
@@ -44,8 +44,8 @@ class LineScoresHelper:
         m, ll, lr = self.mask(line[use])
         return (line[to_mask] & m), ll, lr
 
-    def lookup_score(self, line, fof=0):
-        fr, ll_, lr_ = self.free_range(line, fof)
+    def lookup_score(self, line, c=0):
+        fr, ll_, lr_ = self.free_range(line, c)
         len_ = lr_ + ll_
         if len_ < 4: 
             return (0,0), 0.0
