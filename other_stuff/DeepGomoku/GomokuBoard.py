@@ -102,7 +102,7 @@ class GomokuBoard:
         
             
     def stones_size(self):
-        return 150 / self.size * self.side**2
+        return 120 / self.size * self.side**2
         
 
     def display_score(self, axis, score):        
@@ -132,14 +132,14 @@ class GomokuBoard:
         return self.current_color
         
             
-    def set(self, x,y):
+    def set(self, x,y, stats=False):
         """
         x,y: 1-based indices of the board
         """
         if self.cursor != len(self.stones)-1:
             raise(ValueError("Cursor not at end position."))
         if (x,y) in self.stones:
-            raise(ValueError("Not a valid move. Position is occupied."))
+            raise(ValueError("Not a valid move: (%s, %s). Position is occupied." % (x,y)))
         if not self._is_valid((self.size-y, x-1)):
             raise(ValueError("Not a valid move. Beyond board boundary."))
         self.stones.append((x,y))
@@ -148,11 +148,12 @@ class GomokuBoard:
         c_next = self.ctoggle()
         self.cursor = len(self.stones)-1
         self.comp_ns(c, x, y, 'r')
-        self.add_stats(c_next)
+        if stats:
+            self.add_stats(c_next)
         
         return self
             
-    def undo(self):
+    def undo(self, stats=False):
         if self.cursor != len(self.stones)-1:
             raise(ValueError("Cursor not at end position."))
 
@@ -161,7 +162,8 @@ class GomokuBoard:
         self.stones = self.stones[:-1]
         self.cursor = len(self.stones)-1
         self.comp_ns(c, *stone, action='u')
-        self.stats[c] = self.stats[c][:-1]
+        if stats:
+            self.stats[c] = self.stats[c][:-1]
         return self
             
     def fwd(self, n=1):
