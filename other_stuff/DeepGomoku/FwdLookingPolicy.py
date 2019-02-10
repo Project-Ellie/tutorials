@@ -2,7 +2,7 @@ class NaiveOpponent:
     """
     A naive opponent that simply looks at line scores
     """
-    def move(self, board, width, depth):
+    def move(self, board, width=(1,1), depth=0):
         topn = board.top(1)
         #if depth == 0:
         o,d,od=topn[0], topn[1], topn[2]
@@ -16,7 +16,6 @@ class NaiveOpponent:
         else:
             choice = tod[0]
             #print("combined: (%s, %s)" % choice)
-        board.set(*choice)
         return choice
 
 class FwdLookingPolicy:
@@ -47,14 +46,22 @@ class FwdLookingPolicy:
         for p in moves:
             self.board.set(*p)
             opponent_move = self.opponent_model.move(self.board, width, depth - 1)
-            fv = self.future_value(width, depth-2)
-            options.append((p, opponent_move, fv))
+            self.board.set(*opponent_move)
+
+            # Don't consider any moves that reveal open-4 after opponent's move
+            top1 = self.board.top(1)            
+            top2 = self.board.top(2)            
+            if top1[1][0][1] <= 4.3 and sum([item[1] for item in self.board.top(2)[1] ]) < 7.8: 
+                fv = self.future_value(width, depth-2)
+                if fv:
+                    options.append((p, opponent_move, fv))
+            
             self.board.undo()
             self.board.undo()
 
 
         best = [o for o in options if o[2] == max([o[2] for o in options])]
-        best = best[0]
+        best = best[0] if best else ((-1, -1), (-1, -1), -999)
         #if depth <= 2:
         #    print("Depth %s, best move: %s" % (depth, best))
         #print(options)
