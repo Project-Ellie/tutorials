@@ -89,9 +89,10 @@ class GomokuBoard:
 
                 
     def display_best(self, axis):        
-        otop = self.top(1)[0][0][0]
-        dtop = self.top(1)[1][0][0]
-        odtop = self.top(1)[2][0][0]
+        top1 = self.top(1)
+        otop = top1[0][0][0]
+        dtop = top1[1][0][0]
+        odtop = top1[2][0][0]
         ocircle = plt.Circle(otop, .4, color='#00ff00', lw=2, fill=False)
         dcircle = plt.Circle(dtop, .4, color='#ff0000', lw=2, fill=False)
         odcircle = plt.Circle(odtop, .4, color='#ffff00', lw=2, fill=False)
@@ -105,18 +106,21 @@ class GomokuBoard:
         return 120 / self.size * self.side**2
         
 
-    def display_score(self, axis, score):        
+    def display_score(self, axis, score):  
         for x in range(1, self.size+1):
             for y in range(1, self.size+1):
 
                 c = self.current_color if score == -1 else score
+
                 tso, tsd = self.get_scores(c, x, y)
-                
+
                 if (tsd > self.bias or tso > self.bias): #and (x,y) not in self.stones:
+                    
                     c = self.color_for(offensive=tso, defensive=tsd)
                     axis.scatter([x],[y], color=c, s=2*self.side**2, zorder=5)
-                    
+        
         self.display_best(axis)
+        
         
         
     def set_all(self, stones):
@@ -277,7 +281,7 @@ class GomokuBoard:
         return self.emax(e_x[0], e_y[0]), self.emin(e_x[1], e_y[1])    
 
     def nw_edges(self, x,y):
-        e_x = self.edges(16-x)
+        e_x = self.edges(self.size+1-x)
         e_y = self.edges(y)
         return self.emax(e_x[0], e_y[0]), self.emin(e_x[1], e_y[1])    
 

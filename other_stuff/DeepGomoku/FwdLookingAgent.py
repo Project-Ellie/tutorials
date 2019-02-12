@@ -8,7 +8,10 @@ class FwdLookingAgent:
         self.policy = FwdLookingPolicy(board)
         
     def suggest(self):        
+        threshold = self.board.lsh.heuristics.tactical_threshold()
         top1 = self.board.top(1)
+
+        #print("Checking:", threshold, top1[1][0][1])
         if not self.board.stones:
             return {'reason': 'default center', 
                     'move': (self.board.size//2+1, self.board.size//2+1)}
@@ -16,7 +19,10 @@ class FwdLookingAgent:
             return {'reason': 'immediate win', 'move': top1[0][0][0]}
         elif top1[1][0][1] > 3.99: 
             return {'reason': 'immediate loss prevention', 'move': top1[1][0][0]}
-                
+
+        elif top1[1][0][1] > threshold:
+            return {'reason': 'defensive MUST move', 'move': top1[1][0][0]}
+        
         else:
             sequence = self.policy.future_value(self.width, self.depth)
             if type(sequence) == str:

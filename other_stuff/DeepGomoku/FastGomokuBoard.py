@@ -100,16 +100,20 @@ class FastGomokuBoard(GomokuBoard):
         
     def get_counts_and_scores(self, c, x, y):
         b, w = self.getnh(x,y)
-        friend, foe = (b, w) if c == 0 else (w, b)
+        #friend, foe = (b, w) if c == 0 else (w, b)
         
-        # boundaries are represented by imaginary defensive stones
-        foe |= self.boundary_mask(x, y)
+            # boundaries are represented by imaginary defensive stones
+        mask = self.boundary_mask(x, y)
+        if c==0:
+            w |= mask
+        else:
+            b |= mask
 
+        
         lines = [
             [(nh & (0xFF << 8*direction)) >> 8*direction for nh in (b, w)] 
             for direction in range(4)]
-        #print(b, w, c, lines)
-        
+
         cscores_and_scores = [self.lsh.lookup_score(line, c) for line in lines]
         return [[cas[i] for cas in cscores_and_scores] for i in range(2)]
         

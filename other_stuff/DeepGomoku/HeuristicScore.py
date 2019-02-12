@@ -1,4 +1,11 @@
 import numpy as np
+from GomokuTools import N_9x9
+
+def to_bits (line):
+    n = N_9x9().setline('e', line)
+    line = n.as_bits()[0]    
+    return line
+               
 class HeuristicScore:
     
     def __init__(self, kappa0=3, kappa1=5):
@@ -78,3 +85,31 @@ class HeuristicScore:
     
     def euclidean_sum(self, scores):
         return sum(s**self.kappa0 for s in scores)**(1/self.kappa0) 
+    
+    
+    def tactical_threshold(self):
+        """
+        The threshold that signals a MUST move
+        """
+        
+        two_open3s = self.total_score([
+            to_bits([ 0, 0, 0, 1, 1, 0, 0, 0]),
+            to_bits([ 0, 0, 0, 1, 1, 0, 0, 0])])
+        
+        half_open4_open3 = self.total_score([
+            to_bits([ 0, 2, 1, 1, 1, 0, 0, 0]),
+            to_bits([ 0, 0, 0, 1, 1, 0, 0, 0])])
+        
+        # defended not-so-dangerous versions
+        def_two_open3s = self.total_score([
+            to_bits([ 0, 0, 2, 1, 1, 0, 0, 0]),
+            to_bits([ 0, 0, 0, 1, 1, 0, 0, 0])])
+        
+        def_hopen4_open3 = self.total_score([
+            to_bits([ 0, 2, 1, 1, 1, 0, 0, 0]),
+            to_bits([ 0, 0, 0, 1, 1, 0, 0, 0])])
+        
+        threshold = (two_open3s + half_open4_open3 + def_hopen4_open3 + def_two_open3s) / 4
+        
+        # Threshold is in the middle of dangerous and not so dangerous
+        return threshold
