@@ -2,7 +2,8 @@ import numpy as np
 import pandas as pd
 from GomokuBoard import GomokuBoard
 from LineScores import LineScoresHelper
-from HeuristicScore import HeuristicScore
+from HeuristicScore import HeuristicScore, HeuristicScore2
+from GomokuTools import N_9x9
 
 class FastGomokuBoard(GomokuBoard):
     
@@ -116,8 +117,7 @@ class FastGomokuBoard(GomokuBoard):
 
         cscores_and_scores = [self.lsh.lookup_score(line, c) for line in lines]
         return [[cas[i] for cas in cscores_and_scores] for i in range(2)]
-        
-        
+
     def get_scores(self, c, x, y):
         cns_o = self.get_counts_and_scores(c, x, y)
         tso = self.lsh.heuristics.euclidean_sum(cns_o[1])
@@ -139,3 +139,34 @@ class FastGomokuBoard(GomokuBoard):
     def from_csv(filename, size=19, disp_width=10):
         stones = pd.read_csv(filename, header=None).values.tolist()
         return FastGomokuBoard( size, disp_width, stones=stones, h=HeuristicScore())
+
+    def ton9x9(self, nh):
+        black = bytearray(int(nh[0]).to_bytes(4, 'big'))
+        white = bytearray(int(nh[1]).to_bytes(4, 'big'))
+        ba=bytearray(8)
+        for i in range(4):
+            ba[2*i]=black[i]
+            ba[2*i+1]=white[i]
+        return N_9x9(ba)
+    
+    def top2(self, n):
+        h2 = HeuristicScore2()
+        from operator import itemgetter
+        o_scores=[]
+        d_scores=[]
+        for x in range(1, self.size+1):
+                for y in range(1, self.size+1):
+                    if (x,y) not in self.stones[:self.cursor+1]:
+                        nh = self.getnh(x, y)
+                        n9x9 = self.ton9x9(nh)
+                        #score = self.get_scores(c=self.current_color, x=x, y=y)
+                        score = h2.classify_nh(n9x9)
+                        o_scores.append([(x,y), score[0]])
+                        #d_scores.append([(x,y), score[1]])
+        print(o_scores)
+                        
+        otopn=sorted(o_scores, key=itemgetter(1))[-n:]
+        #dtopn=sorted(d_scores, key=itemgetter(2))[-n:]    
+        otopn.reverse()
+        #dtopn.reverse()
+        return otopn #, dtopn

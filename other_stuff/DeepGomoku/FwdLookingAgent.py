@@ -9,12 +9,14 @@ class FwdLookingAgent:
         
     def suggest(self):        
         threshold = self.board.lsh.heuristics.tactical_threshold()
-        top1 = self.board.top(1)
+        top1 = self.board.top2(1)
 
         #print("Checking:", threshold, top1[1][0][1])
         if not self.board.stones:
             return {'reason': 'default center', 
                     'move': (self.board.size//2+1, self.board.size//2+1)}
+
+        
         if top1[0][0][1] > 3.99: # that's a four, accounting for rounding errors
             return {'reason': 'immediate win', 'move': top1[0][0][0]}
         elif top1[1][0][1] > 3.99: 

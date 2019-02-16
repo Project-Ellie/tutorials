@@ -18,7 +18,7 @@ class HeuristicScore:
         
         Args:
             line: 8x2 integer array that represents the stones
-            fof:  friend or foe? 0 to look at black, 1 to consider white
+            c:    0 to look at black, 1 to consider white
         """
 
         i=3
@@ -32,7 +32,7 @@ class HeuristicScore:
         return np.array(line[c][left:right+1])
 
 
-    def cscore(self, line, c=0, edges=(None, None)):
+    def cscore(self, line, c=0, edges=(None, None), cap=2):
         """
         count how many sub-lines of 5 come with the max number of stones
         Example: "oo.x*xx.." : The max num of blacks if obviously 3. And there are
@@ -50,7 +50,7 @@ class HeuristicScore:
             counts.append(sum(fr[i:i+4]))            
         m = max(counts) if counts else 0
         c_ = sum(np.array(counts) == max(counts)) if counts else 0
-        c_ = min(c_,3)
+        c_ = min(c_,cap)
         return (m, c_)
     
 
@@ -113,3 +113,45 @@ class HeuristicScore:
         
         # Threshold is in the middle of dangerous and not so dangerous
         return threshold
+    
+class HeuristicScore2:
+
+    def __init__(self):
+        self.c2t={
+            (1,1): 1,
+            (1,2): 2,
+            (2,1): 3,
+            (2,2): 4,
+            (3,1): 5,
+            (3,2): 6,
+            (4,1): 8,
+            (4,2): 9
+        }
+        
+    def classify_line(self, line):
+        cscore = HeuristicScore().cscore(line)
+        if (cscore[0] == 0):
+            return 0
+        return self.c2t[cscore]
+    
+    def criticality(self, h, l):
+        if h == 9: 
+            return ('lost', 1)
+        elif h == 8:
+            return ('move or lose in 1', 2)
+        elif h == 7: 
+            return ('move or lose in 2', 3)
+        elif (h, l) in [(5,5), (5,4), (6,5), (6,4), (6,6)]:
+            return ('move or lose in 2', 4)
+        elif (h, l) == (4,4):
+            return ('move or lose in 3', 5)
+        else:
+            return ('defendable', 6)
+    
+    def classify_nh(self, nh):
+        classes=[self.classify_line(nh.bits_in_line(h)) for h in ['e', 'ne', 'n', 'nw']]
+        l, h = sorted(classes)[-2:]
+        c = self.criticality(h, l)
+        return h, l, c[1]
+    
+    

@@ -14,11 +14,13 @@ class GomokuTools:
             's' : (6, [1, 0]),
             'se': (7, [1, 1])}
     
+    @staticmethod
     def m2b(m, size=15):
         """matrix index to board position"""
         r, c = m
         return np.array([size-r, c+1])
 
+    @staticmethod
     def b2m(p, size=15):
         """board position to matrix index"""
         x, y = p
@@ -51,13 +53,33 @@ class GomokuTools:
             'nw': GomokuTools.as_bits(l3)
         }
 
+    @staticmethod
+    def f_range(self, line, c=0, edges=(None, None)):
+        """
+        The largest adversary-free range within a given line
+        
+        Args:
+            line: 8x2 integer array that represents the stones
+            c:    0 to look at black, 1 to consider white
+        """
+
+        i=3
+        while i >= 0 and line[1-c][i] == 0 and i != edges[0]:
+            i-=1
+        left = i + 1
+        i=4
+        while i <= 7 and line[1-c][i] == 0 and i != edges[1]:
+            i+=1
+        right = i-1
+        return np.array(line[c][left:right+1])
+
 
     
     
 class N_9x9:
     """
     9-by-9 neighbourhood of an empty field. Provides 8 bytes representing what is 
-    visibile in a particular direction as input for a valuation function.
+    visibile from that field in a particular direction as input for a valuation function.
     Example: the six stones seen from '*' in south-east/north-west:
 
     - - - - - - - - x
