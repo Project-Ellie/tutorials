@@ -1,9 +1,9 @@
 import numpy as np
-from HeuristicScore import HeuristicScore
+from GomokuTools2 import Heuristics
 
 class LineScoresHelper:
 
-    def __init__(self, heuristics=HeuristicScore()):
+    def __init__(self, heuristics=Heuristics()):
         self.heuristics = heuristics
 
         self.lm = [240, 0, 16, 0, 48, 0, 16, 0, 112, 0, 16, 0, 48, 0, 16, 0]

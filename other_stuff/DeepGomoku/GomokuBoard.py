@@ -1,19 +1,19 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from GomokuTools import GomokuTools, N_9x9
-from HeuristicScore import HeuristicScore
+from GomokuTools2 import GomokuTools, NH9x9, Heuristics
+#from HeuristicScore import HeuristicScore
 
 class GomokuBoard:
-    def __init__(self, size, disp_width, stones=[], heuristics=HeuristicScore()):
+    def __init__(self, size, disp_width, stones=[], stats=False):
         self.size=size
         self.side=disp_width
         self.stones=[]
-        self.heuristics = heuristics
+        self.heuristics = Heuristics()
         self.current_color = 0 
-        self.ns = [[N_9x9() for i in range(self.size)] for j in range(self.size)]
+        self.ns = [[NH9x9() for i in range(self.size)] for j in range(self.size)]
         self.init_constants()
-        self.set_all(stones)
+        self.set_all(stones, stats)
         
     def init_constants(self):
         self.bias = 1.3
@@ -101,12 +101,28 @@ class GomokuBoard:
         axis.add_artist(odcircle)
 
         
-            
     def stones_size(self):
         return 120 / self.size * self.side**2
         
 
     def display_score(self, axis, score):  
+        for x in range(1, self.size+1):
+            for y in range(1, self.size+1):
+                all_edges = self.all_edges(x,y)
+                if score is None:
+                    score = self.current_color
+                nh = self.getn9x9(x,y)
+
+                classification = self.heuristics.classify_nh(nh, all_edges, score_for=score)
+                
+                color = self.heuristics.threat_color(*classification)
+                if color is not None:
+                    axis.scatter([x],[y], color=color, s=2*self.side**2, zorder=5)
+        
+        #self.display_best(axis)
+        
+        
+    def display_score_old(self, axis, score):  
         for x in range(1, self.size+1):
             for y in range(1, self.size+1):
 
@@ -119,13 +135,13 @@ class GomokuBoard:
                     c = self.color_for(offensive=tso, defensive=tsd)
                     axis.scatter([x],[y], color=c, s=2*self.side**2, zorder=5)
         
-        self.display_best(axis)
+        #self.display_best(axis)
         
         
         
-    def set_all(self, stones):
+    def set_all(self, stones, stats=False):
         for stone in stones:
-            self.set(*stone)
+            self.set(*stone, stats)
         
         
     def ctoggle(self):
@@ -216,10 +232,11 @@ class GomokuBoard:
                 
                 if self._is_valid(rc_n):
                     n_ = self.ns[rc_n[0]][rc_n[1]]
+                    odir = (dd[1][0] + 4) % 8 # the opposite direction
                     if action == 'r':
-                        n_.register(color, GomokuTools.opposite(dd[0]), d)
+                        n_.register(color, odir, d)
                     else:
-                        n_.unregister(color, GomokuTools.opposite(dd[0]), d)
+                        n_.unregister(color, odir, d)
         
     
     def _is_valid(self, index):
@@ -294,23 +311,10 @@ class GomokuBoard:
     
     
     def calc_stats(self, c):
-        N = len(self.stones)
-        scores = [self.get_scores(c, x, y) 
-                  for x in range(1, self.size+1)
-                  for y in range(1, self.size+1)]
-        stats = { 
-            'avg_o': sum([s[0] for s in scores]) / N,
-            'gsum_o': 0, #np.sqrt(sum([s[0]**2 for s in scores])),
-            'max_o': max([s[0] for s in scores]),
-            'avg_d': sum([s[1] for s in scores]) / N,
-            'gsum_d': 0,# np.sqrt(sum([s[1]**2 for s in scores])),
-            'max_d': max([s[1] for s in scores]),
-        }
-        return stats
-    
+        raise ValueError("Not implemented")
     
     def add_stats(self, c):
-        self.stats[c].append(self.calc_stats(c))
+        raise ValueError("Not implemented")
         
     
     def save(self, filename):

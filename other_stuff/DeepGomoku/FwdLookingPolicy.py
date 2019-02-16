@@ -25,6 +25,8 @@ class FwdLookingPolicy:
         self.kappa = kappa
         self.opponent_model = opponent
         
+        
+        
     def future_value(self, width, depth):
         if depth == 0:
             top1 = self.board.top(1)

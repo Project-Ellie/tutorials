@@ -1,13 +1,13 @@
 import numpy as np
 import pandas as pd
 from GomokuBoard import GomokuBoard
-from LineScores import LineScoresHelper
-from HeuristicScore import HeuristicScore, HeuristicScore2
-from GomokuTools import N_9x9
+#from LineScores import LineScoresHelper
+#from HeuristicScore import HeuristicScore, HeuristicScore2
+from GomokuTools2 import NH9x9, Heuristics, LineScoresHelper
 
 class FastGomokuBoard(GomokuBoard):
     
-    def __init__(self, size=15, disp_width=6, stones=[], h=HeuristicScore()):
+    def __init__(self, size=15, disp_width=6, stones=[]):
         """
         Fast variant of GomokuBoard. Uses vectorized computations and precomputed scores.
 
@@ -18,10 +18,8 @@ class FastGomokuBoard(GomokuBoard):
             lsh: LineScoresHelper instance with pre-computed scores.
             
         """
+        self.lsh = LineScoresHelper()
         self.size = size
-        self.side = disp_width
-        self.stones = []
-        self.lsh = LineScoresHelper(h)
         self.current_color=0
 
         self.board=[ # impacts of all stones on the board
@@ -48,11 +46,13 @@ class FastGomokuBoard(GomokuBoard):
         
         # for each position, what impact would a stone have from here.
         self.impacts = [[self.impact_from(r,c) 
-                        for c in range(self.size)] 
-                       for r in range(self.size)]        
+                        for c in range(size)] 
+                       for r in range(size)]        
 
-        self.init_constants()
-        self.set_all(stones)
+        super(FastGomokuBoard, self).__init__(size, disp_width, stones)
+
+        #self.init_constants()
+        #self.set_all(stones)
         
 
     def impact_from(self, r,c):
@@ -84,9 +84,11 @@ class FastGomokuBoard(GomokuBoard):
     def next(self):
         self.current_color = 1 - self.current_color
         return 1 - self.current_color
-        
+    
+    
     def color_index(self, c):
         return 0 if c=='b' else 1
+    
     
     def comp_ns(self, color, x, y, action):
         r, c = self.b2m((x,y))
@@ -95,9 +97,13 @@ class FastGomokuBoard(GomokuBoard):
         elif action == 'u':
             self.board[color] ^= self.impacts[r][c]
         
+    def getn9x9(self, x,y):
+        return NH9x9(*self.getnh(x,y))
+        
     def getnh(self, x,y):
         r, c = self.b2m((x,y))
         return (self.board[0][r][c], self.board[1][r][c])
+        
         
     def get_counts_and_scores(self, c, x, y):
         b, w = self.getnh(x,y)
@@ -138,35 +144,34 @@ class FastGomokuBoard(GomokuBoard):
     @staticmethod        
     def from_csv(filename, size=19, disp_width=10):
         stones = pd.read_csv(filename, header=None).values.tolist()
-        return FastGomokuBoard( size, disp_width, stones=stones, h=HeuristicScore())
+        return FastGomokuBoard( size, disp_width, stones=stones)
 
-    def ton9x9(self, nh):
-        black = bytearray(int(nh[0]).to_bytes(4, 'big'))
-        white = bytearray(int(nh[1]).to_bytes(4, 'big'))
-        ba=bytearray(8)
-        for i in range(4):
-            ba[2*i]=black[i]
-            ba[2*i+1]=white[i]
-        return N_9x9(ba)
-    
-    def top2(self, n):
-        h2 = HeuristicScore2()
-        from operator import itemgetter
-        o_scores=[]
-        d_scores=[]
+    def collect_scores(self):
+        h2 = self.lsh.heuristics
+        scores = []
         for x in range(1, self.size+1):
-                for y in range(1, self.size+1):
-                    if (x,y) not in self.stones[:self.cursor+1]:
-                        nh = self.getnh(x, y)
-                        n9x9 = self.ton9x9(nh)
-                        #score = self.get_scores(c=self.current_color, x=x, y=y)
-                        score = h2.classify_nh(n9x9)
-                        o_scores.append([(x,y), score[0]])
-                        #d_scores.append([(x,y), score[1]])
-        print(o_scores)
+            for y in range(1, self.size+1):
+                if (x,y) not in self.stones[:self.cursor+1]:
+                    all_edges = self.all_edges(x,y)
+                    nh = self.getn9x9(x, y)
                         
-        otopn=sorted(o_scores, key=itemgetter(1))[-n:]
-        #dtopn=sorted(d_scores, key=itemgetter(2))[-n:]    
-        otopn.reverse()
-        #dtopn.reverse()
-        return otopn #, dtopn
+                    b_score, w_score = h2.classify_nh(nh, score_for=0, all_edges=all_edges)
+
+                    h, l, c = b_score
+                    soft_black=16*(16*(16*(6-c)+h)+l)+8
+                    h, l, c = w_score
+                    soft_white=16*(16*(16*(6-c)+h)+l)
+                        
+                    scores.append(['b', (x,y), b_score, soft_black])
+                    scores.append(['w', (x,y), w_score, soft_white])
+        return [score for score in scores if score [2][0] > 0]
+
+    
+    def top(self, n=0):
+        n == self.size * self.size if n==0 else n
+        from operator import itemgetter
+        scores=self.collect_scores()
+                        
+        topn=sorted(scores, key=itemgetter(3))[-n:]
+        topn.reverse()
+        return topn
