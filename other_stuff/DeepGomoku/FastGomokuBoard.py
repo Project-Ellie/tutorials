@@ -49,7 +49,7 @@ class FastGomokuBoard(GomokuBoard):
                         for c in range(size)] 
                        for r in range(size)]        
 
-        super(FastGomokuBoard, self).__init__(size, disp_width, stones)
+        GomokuBoard.__init__(self,size, disp_width, stones)
 
         #self.init_constants()
         #self.set_all(stones)
@@ -124,12 +124,12 @@ class FastGomokuBoard(GomokuBoard):
         cscores_and_scores = [self.lsh.lookup_score(line, c) for line in lines]
         return [[cas[i] for cas in cscores_and_scores] for i in range(2)]
 
-    def get_scores(self, c, x, y):
-        cns_o = self.get_counts_and_scores(c, x, y)
-        tso = self.lsh.heuristics.euclidean_sum(cns_o[1])
-        cns_d = self.get_counts_and_scores(1-c, x, y)
-        tsd = self.lsh.heuristics.euclidean_sum(cns_d[1])
-        return tso, tsd
+    #def get_scores(self, c, x, y):
+    #    cns_o = self.get_counts_and_scores(c, x, y)
+    #    tso = self.lsh.heuristics.euclidean_sum(cns_o[1])
+    #    cns_d = self.get_counts_and_scores(1-c, x, y)
+    #    tsd = self.lsh.heuristics.euclidean_sum(cns_d[1])
+    #    return tso, tsd
     
     def boundary_mask(self, x, y):
         mask = 0

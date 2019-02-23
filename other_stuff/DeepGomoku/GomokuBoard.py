@@ -42,7 +42,7 @@ class GomokuBoard:
         axis.set_xlim([0, size+1])
         axis.set_ylim([0, size+1])
         plt.xticks(range(1,size+1),['A','B','C','D','E','F','G','H',
-                         'I','K','L','M','N','O','P', 'Q', 'R', 'S', 'T', 'U'][:size+1])
+                         'I','J','K','L','M','N','O','P', 'Q', 'R', 'S', 'T', 'U'][:size+1])
         plt.yticks(range(1,size+1))
         axis.set_facecolor('#8080FF')
         xlines = [[ [1, size], [y,y], '#E0E0E0'] for y in range(1, size+1)]
@@ -141,7 +141,7 @@ class GomokuBoard:
         
     def set_all(self, stones, stats=False):
         for stone in stones:
-            self.set(*stone, stats)
+            self.set(*stone, stats=stats)
         
         
     def ctoggle(self):
@@ -151,11 +151,18 @@ class GomokuBoard:
         self.current_color = 1 - self.current_color
         return self.current_color
         
+    def maybe_convert(self,x):
+        if type(x) != str:
+            return x
+        return ord(x)-64        
+            
             
     def set(self, x,y, stats=False):
         """
-        x,y: 1-based indices of the board
+        x,y: 1-based indices of the board, x may be an uppercase letter
         """
+        x = self.maybe_convert(x)
+
         if self.cursor != len(self.stones)-1:
             raise(ValueError("Cursor not at end position."))
         if (x,y) in self.stones:

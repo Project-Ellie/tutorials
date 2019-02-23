@@ -225,12 +225,12 @@ class Heuristics:
     
     
     
-    def soft_values(self, nh):
+    def soft_values(self, nh, viewpoint=0):
         classification = self.classify_nh(nh)
         values=[]
         for color in [0,1]:
             h, l, c = classification[color]
-            values.append(16*(16*(16*(6-c)+h)+l)+8*(1-color))
+            values.append(16*(16*(16*(6-c)+h)+l)+8*(viewpoint==color))
         return values
     
     
