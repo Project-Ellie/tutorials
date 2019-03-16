@@ -166,14 +166,17 @@ class GomokuBoard:
         if self.cursor != len(self.stones)-1:
             raise(ValueError("Cursor not at end position."))
         if (x,y) in self.stones:
-            raise(ValueError("Not a valid move: (%s, %s). Position is occupied." % (x,y)))
+            raise(ValueError("Position (%s, %s) is occupied." % (x,y)))
         if not self._is_valid((self.size-y, x-1)):
             raise(ValueError("Not a valid move. Beyond board boundary."))
+        
         self.stones.append((x,y))
         
         c = self.current_color
         c_next = self.ctoggle()
+
         self.cursor = len(self.stones)-1
+        
         self.comp_ns(c, x, y, 'r')
         if stats:
             self.add_stats(c_next)

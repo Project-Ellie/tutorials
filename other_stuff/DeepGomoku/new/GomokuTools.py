@@ -2,6 +2,80 @@ import numpy as np
 
 
 class GomokuTools:
+
+    
+    @staticmethod    
+    def str_base(number, base, width=8):
+        def _str_base(number,base):
+            (d, m) = divmod(number, base)
+            if d > 0:
+                return _str_base(d, base) + str(m)
+            return str(m)
+        s = _str_base(number, base)
+        return '0'*(width-len(s))+s
+
+    
+    @staticmethod    
+    def base2_to_xo(number):
+        return GomokuTools.str_base(number, 3).replace('2', 'o').replace('1', 'x').replace('0', '.')    
+
+    
+    @staticmethod    
+    def mask(offensive, defensive):
+        n = defensive
+        l = n & 0xF0
+        l = (l | l<<1 | l<<2 | l<<3) & 0xF0
+
+        r = n & 0x0F
+        r = (r | r>>1 | r>>2 | r>>3) & 0x0F
+
+        mask=(~(l | r)) & 0xFF
+        free_stones=mask & offensive
+
+        return free_stones, mask
+
+
+    @staticmethod    
+    def num_offensive(o, d):
+        s, l, offset = GomokuTools.mask2(o, d)
+        m2o_bits = GomokuTools.as_bit_array(s)[:l]
+        max_count = 0
+        for w in [2,1,0]:
+            i = 0
+            while i <= len(m2o_bits) - 2 - w:
+                count = sum(m2o_bits[i:i+w+2])
+                count = 3*count - (w+2)
+                if count > max_count:
+                    max_count = count
+                i+=1
+        if m2o_bits[0] == 0:
+            max_count += 1
+        if m2o_bits[-1] == 0:
+            max_count += 1
+
+        # Criticality correction for the fatal double-open 3
+        if max_count == 8:
+            max_count=13
+        return max_count        
+    
+    
+    @staticmethod    
+    def mask2(offensive, defensive):
+        n = defensive
+        l = n & 0xF0
+        l = (l | l<<1 | l<<2 | l<<3) & 0xF0
+
+        r = n & 0x0F
+        r = (r | r>>1 | r>>2 | r>>3) & 0x0F
+
+        mask=(~(l | r))
+        free_stones=mask & offensive
+
+        free_length=np.sum([(mask>>i)&1 for i in range(8)], axis=0)
+        l_offset = np.sum([(l>>i)&1 for i in range(8)], axis=0)
+        #free_length = (free_length > 5) * 5 + (free_length <= 5) * free_length
+        return free_stones << l_offset, free_length, l_offset    
+
     
     @staticmethod
     def dirs():
@@ -27,7 +101,7 @@ class GomokuTools:
     def m2b(m, size):
         """matrix index to board position"""
         r, c = m
-        return np.array([size-r, c+1])
+        return np.array([c+1, size-r])
 
     @staticmethod
     def b2m(p, size):
@@ -50,10 +124,10 @@ class GomokuTools:
         """
         return a 2x8 int array representing the 'x..o..' xo_string 
         """
-        return [[1 if (ch=='x' and c==0) 
+        powers=np.array([2**i for i in range(7, -1, -1)])
+        return [sum([1 if (ch=='x' and c==0) 
                  or (ch=='o' and c==1) 
-                 else 0 for ch in xo_string] for c in [0,1]]
-
+                 else 0 for ch in xo_string] * powers) for c in [0,1]]
 
 
 
@@ -172,8 +246,6 @@ class Heuristics:
             ['#00CF00', '#80B014', '#C0A048', '#E08050', '#D04820'],
             ['#00A000', '#307810', '#607020', '#907828', '#C06030']
         ]
-
-
         # map cscore to threat value
         self.c2t={
             (1,1): 1,
@@ -186,7 +258,52 @@ class Heuristics:
             (4,2): 9
         }
         
+        self.compute_line_scores()
         
+    def nhcombine(self, score_or_count, kappa=1.2):
+        """
+        The neighbourhood score or count.
+        Heuristic function of the 4 line scores or counts
+        score_or_count: a board of line evaluations: shape = (N,N,4)
+        """
+        e,ne,n,nw = np.rollaxis(score_or_count,2,0)
+        return np.power(e**kappa + ne**kappa + n**kappa + nw**kappa, 1/kappa)
+        
+        
+    def compute_line_scores(self):
+        gt = GomokuTools()
+        self._all_scores = np.zeros(256*256, dtype=int)
+        self._all_counts = np.zeros(256*256, dtype=int)
+        self._all_scores_and_more = [0 for _ in range(256*256)]
+        for n in range(81*81):
+            xo = gt.base2_to_xo(n)
+            o,d = gt.line_for_xo(xo)
+            m = gt.mask(o,d)
+            m2 = gt.mask2(o,d)
+            if m2[1] >= 4 and sum(gt.as_bit_array(m2[0])) >= 1:
+                densities = np.multiply(gt.as_bit_array(o), [0,1,2,3,3,2,1,0])
+                density = sum(densities)
+                no = gt.num_offensive(o,d)
+                no = max(no - 2, 0)
+                nf = min(sum(gt.as_bit_array(m[1])),5)                
+                score = 256*no+16*nf+density
+                self._all_scores_and_more[256*o+d]=(xo, score, no, nf, density)
+                self._all_scores[256*o+d]=score
+                self._all_counts[256*o+d]=no
+
+        
+    def lookup_score(self,o,d):
+        return self._all_scores[256*o+d]
+
+    
+    def lookup_count(self,o,d):
+        return self._all_counts[256*o+d]
+
+    
+    def lookup_score_and_more(self,o,d):
+        return self._all_scores_and_more[256*o+d]
+
+    
     def criticality(self, h, l):
         if h == 9: 
             return ('lost', 1)
@@ -329,6 +446,7 @@ class Heuristics:
         
         
         
+        
 class Reasoner():
     def __init__(self, topn, my_color):
         self.topn = topn
@@ -379,65 +497,4 @@ class Reasoner():
             
                     
         
-        
-
-
-class LineScoresHelper:
-
-    def __init__(self, heuristics=Heuristics()):
-        self.heuristics = heuristics
-
-        self.lm = [240, 0, 16, 0, 48, 0, 16, 0, 112, 0, 16, 0, 48, 0, 16, 0]
-        self.rm = [15, 14, 12, 12, 8, 8, 8, 8, 0, 0, 0, 0, 0, 0, 0, 0]
-        self.rl = [4, 3, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]
-        self.ll = [4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0]
-        self.offsets=[0, 256, 256+128, 256+128+64, 256+128+64+32]
-
-        # pre-compute the scores
-        self.cscores = [
-            heuristics.cscore([self.as_bits(line), self.as_bits(0x100 >> n)]) 
-            for n in range(5)
-            for line in range(0x100 >> n)
-        ]
-        self.scores = [
-            0 if cscore[0] == 0 else self.heuristics.c2t[cscore]
-            for cscore in self.cscores
-        ]
-
-        
-    def as_bits(self, n):
-        return [np.sign(n  & (1<<(7-i))) for i in range(8)]        
-    
-    def left_mask(self, n):
-        i = (n&0xF0) >> 4
-        return (self.lm[i], self.ll[i])
-
-    def right_mask(self, n):
-        i = n & 0xF
-        return self.rm[i], self.rl[i]
-
-    def mask(self, n):
-        lm_ = self.left_mask(n)
-        rm_ = self.right_mask(n)
-        return np.add(lm_[0], rm_[0]), lm_[1], rm_[1]
-
-    def free_range(self, line, c):
-        to_mask = c
-        use = 1 - c
-        m, ll, lr = self.mask(line[use])
-        return (line[to_mask] & m), ll, lr
-
-    def lookup_score(self, line, c=0):
-        fr, ll_, lr_ = self.free_range(line, c)
-        len_ = lr_ + ll_
-        if len_ < 4: 
-            return (0,0), 0.0
-        offset = self.offsets[8-len_]
-        n_ = fr >> (4-lr_)
-        index = offset + n_
-        cscore_ = self.cscores[index]
-        score = self.scores[index]
-        return cscore_, score
-
-
         

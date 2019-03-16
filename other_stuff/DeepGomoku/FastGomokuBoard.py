@@ -23,8 +23,9 @@ class FastGomokuBoard(GomokuBoard):
         self.current_color=0
 
         self.board=[ # impacts of all stones on the board
-            np.zeros([size,size], dtype=np.int32),
-            np.zeros([size,size], dtype=np.int32)]
+            np.zeros([size,size], dtype=np.int32), # black
+            np.zeros([size,size], dtype=np.int32), # white
+            np.zeros([size,size], dtype=np.int32)] # borders
         self.impact9x9=[
             [ 
                 0x1 << c if r == 4 and c<4 
@@ -48,11 +49,14 @@ class FastGomokuBoard(GomokuBoard):
         self.impacts = [[self.impact_from(r,c) 
                         for c in range(size)] 
                        for r in range(size)]        
-
+        
+        self.compute_edges()
+        
         GomokuBoard.__init__(self,size, disp_width, stones)
 
         #self.init_constants()
         #self.set_all(stones)
+
         
 
     def impact_from(self, r,c):
@@ -70,7 +74,37 @@ class FastGomokuBoard(GomokuBoard):
         ])
         return (src[4:-4].T[4:-4].T).copy()
 
-        
+    
+    def impact_from_edges(self, r,c):
+        """
+        Construct a complete nxn impact representation of an edge stone
+        That means stones with any of r=-1 or r=size or c=-1 or c=size.
+        These edge stone naturally model the "defensive" impact of the edges.
+        """
+        src=np.hstack([
+            np.zeros((self.size+10,c+1),dtype=np.int),
+            np.vstack([
+                np.zeros((r+1,9), dtype=np.int32), 
+                self.impact9x9, 
+                np.zeros((self.size-1-r+1,9), dtype=np.int32)
+            ]),
+            np.zeros((self.size+10,self.size-1-c+1),dtype=np.int)
+        ])
+        return (src[5:-5].T[5:-5].T).copy()
+
+    
+    def compute_edges(self):
+        borders_sn=[self.impact_from_edges(r,c) 
+                    for r in [-1, self.size] 
+                    for c in range(-1, self.size+1)]
+        borders_ew=[self.impact_from_edges(r,c) 
+                    for c in [-1, self.size] 
+                    for r in range(-1, self.size+1)]
+
+        for impact in borders_sn + borders_ew:
+            self.board[2] |= impact        
+    
+    
     def m2b(self, m):
         """matrix index to board position"""
         r, c = m
@@ -97,13 +131,17 @@ class FastGomokuBoard(GomokuBoard):
         elif action == 'u':
             self.board[color] ^= self.impacts[r][c]
         
-    def getn9x9(self, x,y):
+    def compute_soft_values(self, x, y):
+        raise NotImplementedError()
+        
+    def getn9x9(self, x,y, viewpoint=0):
         return NH9x9(*self.getnh(x,y))
         
     def getnh(self, x,y):
-        r, c = self.b2m((x,y))
-        return (self.board[0][r][c], self.board[1][r][c])
-        
+        r, c = self.b2m((x,y))        
+        return (self.board[0][r][c], 
+                self.board[1][r][c],
+                self.board[2][r][c]) 
         
     def get_counts_and_scores(self, c, x, y):
         b, w = self.getnh(x,y)
