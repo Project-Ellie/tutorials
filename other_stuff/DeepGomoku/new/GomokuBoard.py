@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from GomokuField import GomokuField
 from GomokuTools import GomokuTools
+import pandas as pd
 
 BLACK=0
 WHITE=1
@@ -159,7 +160,7 @@ class GomokuBoard(GomokuField):
         elif self.N == 19:
             axis.scatter([4, 4, 4, 10, 16, 16, 16, 10, 10], 
                          [4, 10, 16, 16, 16, 10, 4, 4, 10], 
-                         s=self.side**2, c='#E0E0E0')
+                         s=self.disp_width**2, c='#E0E0E0')
         elif self.N==20:
             axis.scatter([6, 6, 15, 15], [6, 15, 15, 6], 
                          s=self.disp_width**2, c='#E0E0E0')
@@ -205,4 +206,14 @@ class GomokuBoard(GomokuField):
     def stones_size(self):
         return 120 / self.N * self.disp_width**2
         
+
+    def save(self, filename):
+        df = pd.DataFrame(self.stones)
+        df.to_csv(filename, header=None, index=None)
+
+        
+    @staticmethod        
+    def from_csv(filename, size=19, disp_width=10, heuristics=None):
+        stones = pd.read_csv(filename, header=None).values.tolist()
+        return GomokuBoard( size, disp_width, stones=stones, heuristics=heuristics)
 
