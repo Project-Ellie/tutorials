@@ -1,7 +1,7 @@
 import numpy as np
 from GomokuTools import GomokuTools as gt
 from NH9x9 import NH9x9
-from Heuristics import Heuristics
+from NewHeuristics import NewHeuristics
 
 BLACK=0
 WHITE=1
@@ -72,9 +72,8 @@ class GomokuField:
         
         self.compute_edges()
         
-        self.heuristics = heuristics if heuristics is not None else Heuristics()
+        self.heuristics = heuristics if heuristics is not None else NewHeuristics()
         
-        self.counts = [[],[]]
         self.scores = [[],[]]
         
         
@@ -105,30 +104,16 @@ class GomokuField:
         for edges in edges_sn + edges_ew:
             edges_as_bytes = np.rollaxis(as_bytes(edges), 0, 3)
             self.lines[EDGES] |= edges_as_bytes
-    
 
-    def compute_counts(self, viewpoint):
-        indices = 256*self.lines[viewpoint]+(self.lines[1-viewpoint] | self.lines[2])
-        lines = self.heuristics._all_counts[indices]
-        self.counts[viewpoint] = self.heuristics.nhcombine(lines)
-        
+            
     def compute_scores(self, viewpoint):
-        indices = 256*self.lines[viewpoint]+(self.lines[1-viewpoint] | self.lines[2])
-        lines = self.heuristics._all_scores[indices]
-        self.scores[viewpoint] = self.heuristics.nhcombine(lines)
-    
-    def compute_all_counts_and_scores(self):
-        for viewpoint in [0,1]:
-            self.compute_counts(viewpoint)
-            self.compute_scores(viewpoint)
-    
-    
-    
-    def get_count(self, viewpoint, x,y):
-        r, c = gt.b2m((x,y),self.N)
-        return self.counts[viewpoint][r][c]
-    
-    
+        o = self.lines[viewpoint]
+        d = self.lines[1-viewpoint] | self.lines[2]
+        lines = self.heuristics.lookup_line_score(o, d)
+        self.scores[viewpoint] = self.heuristics.lookup_total_scores(lines)
+        
+        
     def get_score(self, viewpoint, x,y):
         r, c = gt.b2m((x,y),self.N)
         return self.scores[viewpoint][r][c]
+    

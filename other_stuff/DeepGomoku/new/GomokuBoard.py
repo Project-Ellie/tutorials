@@ -17,7 +17,7 @@ def maybe_convert(x):
 
 class GomokuBoard(GomokuField):
     
-    def __init__(self, N=15, disp_width=6, stones=[], heuristics=None):
+    def __init__(self, heuristics, N=15, disp_width=6, stones=[]):
         GomokuField.__init__(self, N, heuristics=heuristics)
         self.disp_width=disp_width
         self.stones = []
