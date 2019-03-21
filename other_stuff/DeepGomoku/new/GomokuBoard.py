@@ -93,11 +93,16 @@ class GomokuBoard(GomokuField):
         if self.cursor != len(self.stones)-1:
             raise(ValueError("Cursor not at end position."))
 
-        stone = self.stones[-1]
-        self.stones = self.stones[:-1]
-        self.cursor = len(self.stones)-1
-        self.compute_neighbourhoods(*stone, action='u')
-        self.ctoggle()
+        stones = self.stones[:-1]
+        self.current_color=WHITE
+        self.stones=[]
+        self.cursor = -1
+
+        self.lines = np.zeros([3, self.N, self.N, 4], dtype=int)
+        for s in stones:
+            self.set(*s)
+        #self.compute_neighbourhoods(*stone, action='u')
+
         return self
             
         
@@ -190,14 +195,14 @@ class GomokuBoard(GomokuField):
     def display_scores(self, axis, viewpoint):
         
         for v in [0,1]:
-            self.compute_counts(v)
+            self.compute_scores(v, self.stones)
 
         for c in range(self.N):
             for r in range(self.N):
                 x,y=GomokuTools.m2b((r,c), self.N)
                 if (x,y) not in self.stones:
-                    offensive = self.counts[viewpoint][r][c]
-                    defensive = self.counts[1-viewpoint][r][c]
+                    offensive = self.scores[viewpoint][r][c]
+                    defensive = self.scores[1-viewpoint][r][c]
                     color = self.color_for(offensive, defensive)
                     if offensive >= 1.5 or defensive >= 1.5:
                         axis.scatter([x],[y], color=color, s=self.stones_size()/4.0, zorder=10)

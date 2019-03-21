@@ -89,6 +89,8 @@ class GomokuField:
         r, c = gt.b2m((x,y),self.N)
         if action == 'r':
             self.lines[self.current_color] |= self.impacts[r][c]
+            #self.lines[0][r][c] = np.zeros(4)
+            #self.lines[1][r][c] = np.zeros(4)
         elif action == 'u':
             self.lines[self.current_color] &= (0xFF ^ self.impacts[r][c])
         
@@ -106,12 +108,17 @@ class GomokuField:
             self.lines[EDGES] |= edges_as_bytes
 
             
-    def compute_scores(self, viewpoint):
+    def compute_scores(self, viewpoint, stones=[]):
         o = self.lines[viewpoint]
         d = self.lines[1-viewpoint] | self.lines[2]
         lines = self.heuristics.lookup_line_score(o, d)
         self.scores[viewpoint] = self.heuristics.lookup_total_scores(lines)
-        
+
+        # correct for positions occupied by stones
+        for stone in stones:
+            r, c = gt.b2m(stone,self.N)
+            self.scores[viewpoint][r][c]=0
+            
         
     def get_score(self, viewpoint, x,y):
         r, c = gt.b2m((x,y),self.N)

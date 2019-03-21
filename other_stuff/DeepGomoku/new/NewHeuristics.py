@@ -43,7 +43,7 @@ class NewHeuristics:
         m = gt.mask(o,d)
         m2 = gt.mask2(o,d)
         if m2[1] >= 4 and sum(gt.as_bit_array(m2[0])) >= 1:
-            return self.num_offensive(o,d) - 2
+            return max(self.num_offensive(o,d) - 2, 0)
         else:
             return 0        
 
@@ -75,11 +75,11 @@ class NewHeuristics:
         if l_[-1]>7:
             return 8 # Done
 
+        if l_[-1] in [4,5,5.5] and l_[-2] in [4,5]:
+            return 6.9 # can only be countered by strong counter-attack
+
         if l_[-1]==7 or (l_[-1] in [4.5,5.5,6,6.5,7.0] and l_[-2] >= 4):
             return 7 # truly strong
-
-        if l_[-1] in [4,5] and l_[-2] in [4,5]:
-            return 6.9 # can only be countered by strong counter-attack
 
         return (l_[-1]**self.kappa + l_[-2]**self.kappa)**(1/self.kappa)        
         
