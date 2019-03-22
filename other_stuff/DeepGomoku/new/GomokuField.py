@@ -124,3 +124,8 @@ class GomokuField:
         r, c = gt.b2m((x,y),self.N)
         return self.scores[viewpoint][r][c]
     
+    
+    def _get_value(self, viewpoint):
+        o = self.scores[1-viewpoint]
+        d = self.scores[viewpoint]
+        return np.sum(o) - np.sum(d)

@@ -217,6 +217,10 @@ class GomokuBoard(GomokuField):
         df.to_csv(filename, header=None, index=None)
 
         
+    def get_value(self):
+        return self._get_value(self.current_color)
+        
+        
     @staticmethod        
     def from_csv(filename, size=19, disp_width=10, heuristics=None):
         stones = pd.read_csv(filename, header=None).values.tolist()
