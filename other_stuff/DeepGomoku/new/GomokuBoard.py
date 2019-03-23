@@ -92,20 +92,14 @@ class GomokuBoard(GomokuField):
     def undo(self):
         if self.cursor != len(self.stones)-1:
             raise(ValueError("Cursor not at end position."))
-
-        stones = self.stones[:-1]
-        self.current_color=WHITE
-        self.stones=[]
-        self.cursor = -1
-
-        self.lines = np.zeros([3, self.N, self.N, 4], dtype=int)
-        for s in stones:
-            self.set(*s)
-        #self.compute_neighbourhoods(*stone, action='u')
-
+        x,y = self.stones[-1]
+        self.stones = self.stones[:-1]
+        self.compute_neighbourhoods(x, y, 'u')
+        self.ctoggle()
+        self.cursor = len(self.stones)-1
         return self
-            
-        
+    
+    
     def bwd(self, n=1):
         if ( n > 1 ):
             self.bwd()
@@ -195,7 +189,7 @@ class GomokuBoard(GomokuField):
     def display_scores(self, axis, viewpoint):
         
         for v in [0,1]:
-            self.compute_scores(v, self.stones)
+            self.compute_scores(v)
 
         for c in range(self.N):
             for r in range(self.N):
@@ -219,10 +213,22 @@ class GomokuBoard(GomokuField):
         
     def get_value(self):
         return self._get_value(self.current_color)
+  
+
+    def get_clean_scores(self):
+        """ 
+        get the scores with the occupied positions zeroed out
+        """
+        cp = self.scores.copy()
+        for pos in self.stones:
+            r, c = GomokuTools.b2m(pos,self.N)
+            for color in [0,1]:
+                cp[color][r][c]=0
+        return cp
         
         
     @staticmethod        
-    def from_csv(filename, size=19, disp_width=10, heuristics=None):
+    def from_csv(filename, heuristics, size=19, disp_width=10):
         stones = pd.read_csv(filename, header=None).values.tolist()
-        return GomokuBoard( size, disp_width, stones=stones, heuristics=heuristics)
+        return GomokuBoard(heuristics, size, disp_width, stones=stones)
 

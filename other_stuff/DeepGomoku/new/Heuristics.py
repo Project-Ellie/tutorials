@@ -3,7 +3,9 @@ from GomokuTools import GomokuTools as gt
 
 class Heuristics:
     
-    def __init__(self):
+    def __init__(self, kappa):
+        
+        self.kappa = kappa
 
         self.color_scheme = [ # visualize the offensive/defensive score
             ['#F0F0F0', '#FFC0C0', '#FF9090', '#FF6060', '#FF0000'],
@@ -14,51 +16,88 @@ class Heuristics:
         ]
 
         self.compute_line_scores()
+        self.compute_total_scores()
         
-        
-    def nhcombine(self, score_or_count, kappa=1.2):
-        """
-        The neighbourhood score or count.
-        Heuristic function of the 4 line scores or counts
-        score_or_count: a board of line evaluations: shape = (N,N,4)
-        """
-        e,ne,n,nw = np.rollaxis(score_or_count,2,0)
-        return np.power(e**kappa + ne**kappa + n**kappa + nw**kappa, 1/kappa)
-        
+
+    def num_offensive(self, o, d):
+        s, l, offset = gt.mask2(o, d)
+        m2o_bits = gt.as_bit_array(s)[:l]
+        max_count = 0
+        for w in [2,1,0]:
+            i = 0
+            while i <= len(m2o_bits) - 2 - w:
+                count = sum(m2o_bits[i:i+w+2])
+                count = 3*count - (w+2)
+                if count > max_count:
+                    max_count = count
+                i+=1
+        if m2o_bits[0] == 0:
+            max_count += 1.5
+        if m2o_bits[-1] == 0:
+            max_count += 1.5
+
+        return max_count        
+    
+                
+    def line_score_for(self, o,d):
+        m = gt.mask(o,d)
+        m2 = gt.mask2(o,d)
+        if m2[1] >= 4 and sum(gt.as_bit_array(m2[0])) >= 1:
+            return max(self.num_offensive(o,d) - 2, 0)
+        else:
+            return 0        
+
         
     def compute_line_scores(self):
-        self._all_scores = np.zeros(256*256, dtype=int)
-        self._all_counts = np.zeros(256*256, dtype=int)
-        self._all_scores_and_more = [0 for _ in range(256*256)]
+        
+        self.line_scores = np.zeros(256*256)
         
         # 81*81 is the range of values for 8-digit base 2 numbers, 
         # which represent arbitrary combinations of 8 stones in a row
         for n in range(81*81):
             xo = gt.base2_to_xo(n)
             o,d = gt.line_for_xo(xo)
-            m = gt.mask(o,d)
-            m2 = gt.mask2(o,d)
-            if m2[1] >= 4 and sum(gt.as_bit_array(m2[0])) >= 1:
-                densities = np.multiply(gt.as_bit_array(o), [0,1,2,3,3,2,1,0])
-                density = sum(densities)
-                no = gt.num_offensive(o,d)
-                no = max(no - 2, 0)
-                nf = min(sum(gt.as_bit_array(m[1])),5)                
-                score = 256*no+16*nf+density
-                self._all_scores_and_more[256*o+d]=(xo, score, no, nf, density)
-                self._all_scores[256*o+d]=score
-                self._all_counts[256*o+d]=no
+            self.line_scores[256*o+d]=self.line_score_for(o,d)
 
+                
+    def lookup_line_score(self,o,d):
+        return self.line_scores[256*o+d]
+
+
+    def nhcombine(self, line):
+        """
+        The neighbourhood score or count.
+        Heuristic function of the 4 line scores or counts
+        score_or_count: a board of line evaluations: shape = (N,N,4)
+        """
+        l_ = sorted(line)
+
+        if l_[-1]>7:
+            return 8 # Done
+
+        if l_[-1] in [4,5,5.5] and l_[-2] in [4,5]:
+            return 6.9 # can only be countered by strong counter-attack
+
+        if l_[-1]==7 or (l_[-1] in [4.5,5.5,6,6.5,7.0] and l_[-2] >= 4):
+            return 7 # truly strong
+
+        return (l_[-1]**self.kappa + l_[-2]**self.kappa)**(1/self.kappa)        
         
-    def lookup_score(self,o,d):
-        return self._all_scores[256*o+d]
 
+    def compute_total_scores(self):
+        self.total_scores = np.zeros([160000])
+        values = np.arange(20)/2
+        for e in values:
+            for ne in values:
+                for n in values:
+                    for nw in values:
+                        v = self.nhcombine([e, ne, n, nw])
+                        self.total_scores[int(2*(8000*e+400*ne+20*n+nw))]=v        
+
+                        
+    def lookup_total_scores(self, line_scores):
+        e,ne,n,nw = np.rollaxis(line_scores, 2, 0)
+        indices = (2*(8000*e+400*ne+20*n+nw)).astype(int)
+        return self.total_scores[indices]
     
-    def lookup_count(self,o,d):
-        return self._all_counts[256*o+d]
-
-    
-    def lookup_score_and_more(self,o,d):
-        return self._all_scores_and_more[256*o+d]
-
     
