@@ -75,6 +75,10 @@ class HeuristicGomokuPolicy:
         elif vo == 7.0:
             return Move(xo, yo, "Win-in-2", 1)
         elif vd == 7.0:
+            options = self.defense_options(xd, yd)
+            l = list(zip(options, np.zeros(len(options))))
+            sampler = StochasticMaxSampler(l, len(options))
+            xd, yd = sampler.draw()
             return Move(xd, yd, "Defending Win-in-2", 0)
 
         elif vo == 6.9:
@@ -84,7 +88,31 @@ class HeuristicGomokuPolicy:
         else:
             return None
         
-        
+    def defense_options(self, xd, yd):
+        """
+        return a list of all options that could remedy the critical state
+        """
+        color = self.board.current_color
+        options=[]        
+        rc = gt.b2m((xd, yd),self.board.N)
+        for direction in ['e', 'ne', 'n', 'nw']:
+            step = np.array(gt.dirs()[direction][1])
+            for w in [-4,-3,-2,-1,1,2,3,4]:
+                r, c = rc+w*step
+                if r >= 0 and r < self.board.N and c >= 0 and c < self.board.N:
+                    x,y = gt.m2b((r,c), self.board.N)
+                    if (x,y) not in self.board.stones:
+                            self.board.set(x,y)
+                            self.board.compute_scores(color)
+                            s=self.board.get_score(color, xd,yd)
+                            self.board.undo()
+                            self.board.compute_scores(color)
+                            if s < 7.0 and self.board.get_score(color, x, y) == 7.0:
+                                options.append((x,y))
+        options.append((xd,yd))
+        return options
+
+                                
     def suggest(self, style=None, bias=1.0, topn=10):
         if style == None:
             style = self.style
@@ -94,7 +122,6 @@ class HeuristicGomokuPolicy:
         else:
             sampler = self.suggest_from_best_value(topn, style, bias)
             r_c = sampler.draw()
-            print("Here: "+str(r_c))
             x, y = gt.m2b(r_c, self.board.N)
             return Move(x, y, "Style: %s" % style, 0)
 
