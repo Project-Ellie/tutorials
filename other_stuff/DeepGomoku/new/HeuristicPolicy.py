@@ -166,9 +166,9 @@ class HeuristicGomokuPolicy:
         return StochasticMaxSampler(scores, n, bias)
             
 
-    def suggest_from_best_value(self, n, style, bias):
+    def suggest_from_best_value(self, n, style, bias, nscores=10):
 
-        sampler = self.suggest_from_score(n, style, bias)
+        sampler = self.suggest_from_score(max(n, nscores), style, bias)
 
         scores = []
         for choice in sampler.choices:

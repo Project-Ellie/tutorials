@@ -105,6 +105,10 @@ class GomokuField:
             edges_as_bytes = np.rollaxis(as_bytes(edges), 0, 3)
             self.lines[EDGES] |= edges_as_bytes
 
+
+    def compute_all_scores(self):
+        for viewpoint in [BLACK, WHITE]:
+            self.compute_scores(viewpoint)
             
     def compute_scores(self, viewpoint):
         o = self.lines[viewpoint]

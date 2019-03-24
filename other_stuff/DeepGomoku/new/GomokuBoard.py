@@ -24,7 +24,8 @@ class GomokuBoard(GomokuField):
         self.current_color=WHITE
         self.cursor = -1
         for stone in stones:
-            self.set(*stone)
+            self.set(*stone, compute_scores=False)
+        self.compute_all_scores()
         self.color_scheme = [ # visualize the offensive/defensive score
             ['#F0F0F0', '#FFC0C0', '#FF9090', '#FF6060', '#FF0000'],
             ['#A0FFA0', '#E8D088', '#FFA080', '#F86040', '#F01808'],
@@ -66,7 +67,7 @@ class GomokuBoard(GomokuField):
         return self.current_color
         
         
-    def set(self, x,y):
+    def set(self, x,y, compute_scores=True):
         """
         x,y: 1-based indices of the board, x may be an uppercase letter
         """
@@ -86,10 +87,13 @@ class GomokuBoard(GomokuField):
         
         self.compute_neighbourhoods(x, y, 'r')
         
+        if compute_scores:
+            self.compute_all_scores()
+        
         return self
 
 
-    def undo(self):
+    def undo(self, compute_scores=True):
         if self.cursor != len(self.stones)-1:
             raise(ValueError("Cursor not at end position."))
         x,y = self.stones[-1]
@@ -97,6 +101,9 @@ class GomokuBoard(GomokuField):
         self.compute_neighbourhoods(x, y, 'u')
         self.ctoggle()
         self.cursor = len(self.stones)-1
+        if compute_scores:
+            self.compute_all_scores()
+        
         return self
     
     
@@ -211,14 +218,20 @@ class GomokuBoard(GomokuField):
         df.to_csv(filename, header=None, index=None)
 
         
-    def get_value(self):
+    def get_value(self, compute_scores=False):
+        if compute_scores:
+            self.compute_all_scores()
+            
         return self._get_value(self.current_color)
   
 
-    def get_clean_scores(self):
+    def get_clean_scores(self, compute_scores=False):
         """ 
         get the scores with the occupied positions zeroed out
         """
+        if compute_scores:
+            self.compute_all_scores()
+            
         cp = self.scores.copy()
         for pos in self.stones:
             r, c = GomokuTools.b2m(pos,self.N)
