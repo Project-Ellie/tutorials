@@ -1,7 +1,33 @@
 import numpy as np
 
-
 class GomokuTools:
+
+    @staticmethod    
+    def string_to_stones(encoded):
+        """
+        returns an array of pairs for a string-encoded sequence
+        e.g. [('A',1), ('M',14)] for 'a1m14'
+        """
+        x, y = encoded[0].upper(), 0
+        stones = []
+        for c in encoded[1:]: 
+            if c.isdigit():
+                y = 10 * y + int(c)
+            else:
+                stones.append((x,y))
+                x = c.upper()
+                y = 0
+        stones.append((x,y)) 
+        return stones
+
+    
+    @staticmethod    
+    def stones_to_string(stones):
+        """
+        returns a string-encoded sequence for an array of pairs.
+        e.g. 'a1m14' for [('A',1), ('M',14)]  
+        """
+        return "".join([s[0].lower() + str(s[1]) for s in stones])
 
     
     @staticmethod    
