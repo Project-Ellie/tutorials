@@ -40,6 +40,10 @@ class Heuristics:
     
                 
     def line_score_for(self, o,d):
+        
+        for four in [0x0F, 0x1E, 0x3C, 0x78, 0xF0]:
+            if ( o & four ) == four:
+                return 9.5
         m = gt.mask(o,d)
         m2 = gt.mask2(o,d)
         if m2[1] >= 4 and sum(gt.as_bit_array(m2[0])) >= 1:

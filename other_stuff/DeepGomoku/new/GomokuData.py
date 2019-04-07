@@ -114,18 +114,29 @@ def wrap_sample(array, value):
 
 
 def create_samples_and_qvalues(board, heuristics):
+    from copy import deepcopy
     """
     create 8 equivalent samples and qvalues from the given board
     """
+    
+    # A little tweak: If the last move saw an "immediate win", 
+    # we won't need the board that has a finished line of 5.
+    if True:
+        dcp = deepcopy(board)
+        policy = HeuristicGomokuPolicy(dcp, style=2)
+        dcp.undo()
+        if policy.suggest().status == 2:
+            board.undo().undo()
+
     all_stones_t = [transform(board.stones.copy(), board.N, rot, ref) 
-                    for rot in range(4)
-                    for ref in [False, True]]
+        for rot in range(4)
+        for ref in [False, True]]
 
     samples = []
     qvalues = []
     for stones_t in all_stones_t:
         sample = create_sample(stones_t, board.N, 1-board.current_color)
-        board = GomokuBoard(heuristics=heuristics, stones=stones_t)
+        board = GomokuBoard(heuristics, board.N, stones=stones_t)
         policy = HeuristicGomokuPolicy(board, STYLE_MIXED)
         qvalue, default_value = heuristic_QF(board, policy)
         qvalue = wrap_sample(qvalue, default_value)

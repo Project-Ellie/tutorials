@@ -41,7 +41,10 @@ class StochasticMaxSampler:
             if r > i[0]:
                 return i[1]
         
-        
+SURE_WIN = 1
+IMMEDIATE_WIN = 2
+SURE_LOSS = -1
+ONGOING = 0
     
 class HeuristicGomokuPolicy:
     def __init__(self, board, style):
@@ -50,8 +53,8 @@ class HeuristicGomokuPolicy:
     
     def pos_and_scores(self, index, viewpoint):
         "index: the index of the scored position in a flattened array"
-        mpos = np.divmod(index, 15)
-        bpos = gt.m2b(mpos, 15)
+        mpos = np.divmod(index, self.board.N)
+        bpos = gt.m2b(mpos, self.board.N)
         return (bpos[0], bpos[1], 
             self.board.scores[viewpoint][mpos[0]][mpos[1]])
     
@@ -67,24 +70,24 @@ class HeuristicGomokuPolicy:
         #print(xo, yo, vo)
         #print(xd, yd, vd)
         if vo > 7.0:
-            return Move(xo, yo, "Immediate win", 1)
+            return Move(xo, yo, "Immediate win", IMMEDIATE_WIN)
         elif vd > 7.0:
-            if sorted(clean_scores[viewpoint].reshape(15*15))[-2] > 7.0:
-                return Move(0,0,"Two or more immediate threats. Giving up.", -1)
-            return Move (xd, yd, "Defending immediate threat", 0)
+            if sorted(clean_scores[viewpoint].reshape(self.board.N*self.board.N))[-2] > 7.0:
+                return Move(0,0,"Two or more immediate threats. Giving up.", SURE_LOSS)
+            return Move (xd, yd, "Defending immediate threat", ONGOING)
         elif vo == 7.0:
-            return Move(xo, yo, "Win-in-2", 1)
+            return Move(xo, yo, "Win-in-2", SURE_WIN)
         elif vd == 7.0:
             options = self.defense_options(xd, yd)
             l = list(zip(options, np.zeros(len(options))))
             sampler = StochasticMaxSampler(l, len(options))
             xd, yd = sampler.draw()
-            return Move(xd, yd, "Defending Win-in-2", 0)
+            return Move(xd, yd, "Defending Win-in-2", ONGOING)
 
         elif vo == 6.9:
-            return Move(xo, yo, "Soft-win-in-2", 0)
+            return Move(xo, yo, "Soft-win-in-2", ONGOING)
         elif vd == 6.9:
-            return Move(xd, yd, "Defending Soft-win-in-2", 0)
+            return Move(xd, yd, "Defending Soft-win-in-2", ONGOING)
         else:
             return None
         
@@ -172,7 +175,7 @@ class HeuristicGomokuPolicy:
 
         scores = []
         for choice in sampler.choices:
-            move = gt.m2b(choice[1], 15)
+            move = gt.m2b(choice[1], self.board.N)
             self.board.set(*move)
             for color in [0,1]:
                 self.board.compute_scores(color)
