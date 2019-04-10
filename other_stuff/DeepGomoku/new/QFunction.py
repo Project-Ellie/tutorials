@@ -18,10 +18,13 @@ def enumerated_top(board, n):
 def least_significant_move(board):
     scores = board.get_clean_scores()
     index = np.argmin(scores[0] + scores[1])
-
-    r_c = np.divmod(index,board.N)
-    pos = gt.m2b(r_c, board.N)
-    return pos
+    r, c = np.divmod(index,board.N)
+    least_score = scores[0] + scores[1]
+    if least_score[r][c] == 0:
+        return (-1,-1), 0
+        
+    pos = gt.m2b((r,c), board.N)
+    return pos, least_score
 
 
 def value_of_least_significant_move(board, policy):
@@ -29,13 +32,19 @@ def value_of_least_significant_move(board, policy):
         The value of the least significant move is the default QValue
         for all but some chosen good ones.
     """
-    least = least_significant_move(board)
-    return value_after(board, least, policy)
+    least, value = least_significant_move(board)
+    if value == 0:
+        return 0
+    else:
+        return value_after(board, least, policy)
 
 
 def value_after(board, move, policy):
     board.set(*move)
     counter = policy.suggest_counter(style=2, topn=1)
+    if (counter.x, counter.y) == (0,0):
+        print(board.stones)
+        print(move)
     board.set(counter.x, counter.y)
     r,c = move
     # those take the values after the best responses
@@ -43,6 +52,7 @@ def value_after(board, move, policy):
     board.undo(False).undo()
     return value
 
+MAX_QVALUE=200
 
 def heuristic_QF(board, policy):
     """
@@ -58,8 +68,8 @@ def heuristic_QF(board, policy):
 
     # Critical defensive situation: All but few moves are fatal
     if max_d > 6.9: 
-        default_value = -9999.
-        q = q - 9999. # All options are deadly,...
+        default_value = - MAX_QVALUE
+        q = q - MAX_QVALUE # All options are deadly,...
         for move in top_d: # ...apart from those ranked as critical defenses
             if move[1] > 6.999:
                 r,c=move[0]
@@ -72,7 +82,7 @@ def heuristic_QF(board, policy):
         for move in top_o:
             if move[1] > 6.999:
                 r,c = move[0]
-                q[r][c] = 9999.
+                q[r][c] = MAX_QVALUE
 
     # for efficiency sake: all but the best 20 are considered as bas as the worst.
     else: 

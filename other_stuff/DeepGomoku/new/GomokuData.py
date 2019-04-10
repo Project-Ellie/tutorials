@@ -150,6 +150,9 @@ def data_from_game(board, policy, heuristics):
     """
     Careful: This function rolls back the board
     """
+    # Don't want to see fours (my heuristics don't work well when the game is essentially done anyway.)
+    board.undo(False).undo(False)
+
     s,v = create_samples_and_qvalues(board, heuristics)
     while board.cursor > 6:
         board.undo()

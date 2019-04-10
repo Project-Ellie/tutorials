@@ -78,7 +78,7 @@ class GomokuBoard(GomokuField):
         if (x,y) in self.stones:
             raise(ValueError("Position (%s, %s) is occupied." % (x,y)))
         if not self._is_valid((self.N-y, x-1)):
-            raise(ValueError("Not a valid move. Beyond board boundary."))
+            raise(ValueError("Not a valid move: (%s, %s). Beyond board boundary."  % (x,y)))
         
         self.stones.append((x,y))        
         c = self.current_color
