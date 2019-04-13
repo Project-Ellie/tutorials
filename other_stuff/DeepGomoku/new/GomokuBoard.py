@@ -76,6 +76,7 @@ class GomokuBoard(GomokuField):
         if self.cursor != len(self.stones)-1:
             raise(ValueError("Cursor not at end position."))
         if (x,y) in self.stones:
+            print(self.stones)
             raise(ValueError("Position (%s, %s) is occupied." % (x,y)))
         if not self._is_valid((self.N-y, x-1)):
             raise(ValueError("Not a valid move: (%s, %s). Beyond board boundary."  % (x,y)))
@@ -219,13 +220,15 @@ class GomokuBoard(GomokuField):
 
         
     def get_value(self, compute_scores=False):
-        if compute_scores:
-            self.compute_all_scores()
-            
-        return self._get_value(self.current_color)
+        scores = self.get_clean_scores(compute_scores)
+        o = scores[1-self.current_color]
+        d = scores[self.current_color]
+        return np.sum(o) - np.sum(d)
+        
+        #return self._get_value(self.current_color)
   
 
-    def get_clean_scores(self, compute_scores=False):
+    def get_clean_scores(self, compute_scores=False, tag=0):
         """ 
         get the scores with the occupied positions zeroed out
         """
@@ -236,7 +239,7 @@ class GomokuBoard(GomokuField):
         for pos in self.stones:
             r, c = GomokuTools.b2m(pos,self.N)
             for color in [0,1]:
-                cp[color][r][c]=0
+                cp[color][r][c]=tag
         return cp
         
         

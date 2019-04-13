@@ -2,6 +2,8 @@ from operator import itemgetter
 import numpy as np
 from GomokuTools import GomokuTools as gt
 
+MAX_QVALUE=200
+
 def enumerated_top(board, n):
     """
         return the enumerated, ranked lists of offensive and defensive positions
@@ -16,43 +18,39 @@ def enumerated_top(board, n):
     return res
 
 def least_significant_move(board):
-    scores = board.get_clean_scores()
-    index = np.argmin(scores[0] + scores[1])
-    r, c = np.divmod(index,board.N)
+    scores = board.get_clean_scores(tag=1) # tag occupied positions non-zero
     least_score = scores[0] + scores[1]
-    if least_score[r][c] == 0:
-        return (-1,-1), 0
-        
+    index = np.argmin(least_score)
+    r, c = np.divmod(index,board.N)
+
     pos = gt.m2b((r,c), board.N)
-    return pos, least_score
-
-
-def value_of_least_significant_move(board, policy):
-    """
-        The value of the least significant move is the default QValue
-        for all but some chosen good ones.
-    """
-    least, value = least_significant_move(board)
-    if value == 0:
-        return 0
-    else:
-        return value_after(board, least, policy)
+    return pos
 
 
 def value_after(board, move, policy):
+
     board.set(*move)
-    counter = policy.suggest_counter(style=2, topn=1)
+    counter = policy.suggest_naive(style=2, topn=1)
+
+    # Some situations in recorded matches are still difficult for my heuristics at this point
+    # So I simply ignore the value difference for these few
     if (counter.x, counter.y) == (0,0):
-        print(board.stones)
-        print(move)
+        
+        if counter.status == -1: # Opponent gave up.
+            return MAX_QVALUE
+        else:
+            print("IMPLAUSIBLE COUNTER MOVE!")
+            print(board.stones)
+            print(move)
+            board.undo()
+            return board.get_value()
+    
     board.set(counter.x, counter.y)
-    r,c = move
     # those take the values after the best responses
     value = board.get_value() 
+    
     board.undo(False).undo()
     return value
-
-MAX_QVALUE=200
 
 def heuristic_QF(board, policy):
     """
@@ -84,10 +82,10 @@ def heuristic_QF(board, policy):
                 r,c = move[0]
                 q[r][c] = MAX_QVALUE
 
-    # for efficiency sake: all but the best 20 are considered as bas as the worst.
+    # for efficiency sake: all but the best 20 are considered as bad as the worst.
     else: 
         sampler = policy.suggest_from_best_value(20, 2, .05)
-        default_value = value_of_least_significant_move(board, policy)
+        default_value = value_after(board, least_significant_move(board), policy)
         q = q + default_value
         for move in sampler.choices:
             r,c=move[1]

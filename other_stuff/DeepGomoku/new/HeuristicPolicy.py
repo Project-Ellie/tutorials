@@ -129,7 +129,10 @@ class HeuristicGomokuPolicy:
             return Move(x, y, "Style: %s" % style, 0)
 
 
-    def suggest_counter(self, style=None, bias=1.0, topn=10):
+    def suggest_naive(self, style=None, bias=1.0, topn=10):
+        """
+        Non-deterministic! Samples from the highest naive scores
+        """
         if style == None:
             style = self.style
         critical = self.most_critical_pos()
@@ -140,7 +143,6 @@ class HeuristicGomokuPolicy:
             r_c = sampler.draw()
             x, y = gt.m2b(r_c, self.board.N)
             return Move(x, y, "Style: %s" % style, 0)
-
 
         
     def suggest_from_score(self, n, style, bias):
@@ -180,7 +182,7 @@ class HeuristicGomokuPolicy:
             for color in [0,1]:
                 self.board.compute_scores(color)
 
-            counter = self.suggest_counter(style=2, bias=1.0, topn=3)# strongest defense assumed
+            counter = self.suggest_naive(style=2, bias=1.0, topn=3)# naive-strongest defense assumed
             self.board.set(counter.x, counter.y)
             for color in [0,1]:
                 self.board.compute_scores(color)

@@ -160,3 +160,8 @@ def data_from_game(board, policy, heuristics):
         s = np.concatenate((s,s1))
         v = np.concatenate((v,v1))
     return s,v
+
+def to_matrix12(sample):
+    field = np.rollaxis(sample.reshape(22,22,2), 2, 0).astype(np.int)
+    unwrapped = (field[0]+field[1]*2)[1:-1].T[1:-1].T
+    return unwrapped
