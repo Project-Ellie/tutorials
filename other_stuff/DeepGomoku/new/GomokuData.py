@@ -114,10 +114,10 @@ def wrap_sample(array, value):
 
 
 def create_samples_and_qvalues(board, heuristics):
-    from copy import deepcopy
     """
     create 8 equivalent samples and qvalues from the given board
     """
+    from copy import deepcopy
     
     # A little tweak: If the last move saw an "immediate win", 
     # we won't need the board that has a finished line of 5.
@@ -165,3 +165,11 @@ def to_matrix12(sample):
     field = np.rollaxis(sample.reshape(22,22,2), 2, 0).astype(np.int)
     unwrapped = (field[0]+field[1]*2)[1:-1].T[1:-1].T
     return unwrapped
+
+def to_matrix_xo(sample):
+    if np.sum(to_matrix12(sample)>0) % 2 == 0:
+        symbols = ['. ', 'x ', 'o ']
+    else:
+        symbols = ['. ', 'o ', 'x ']
+    im12 = to_matrix12(sample)
+    return "\n".join(["".join([symbols[c] for c in im12[r]]) for r in range(20) ])

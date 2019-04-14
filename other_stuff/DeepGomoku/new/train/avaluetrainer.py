@@ -1,3 +1,4 @@
+import numpy as np
 import tensorflow as tf
 from tensorflow.feature_column import numeric_column as num
 from tensorflow.estimator import RunConfig
@@ -33,7 +34,8 @@ def make_tfr_input_fn(filename_pattern, batch_size, board_size, options):
 
 
 def make_model_fn(board_size, options):
-        
+
+
     N = board_size
     
     feature_columns = [num('state', shape=((N+2)*(N+2)*2))]
@@ -46,6 +48,14 @@ def make_model_fn(board_size, options):
     
     def _model_fn(features, labels, mode):
 
+        mask = np.ones([22, 22], dtype=int)
+        mask[0] = 0
+        mask[21] = 0
+        mask[:,0]=0
+        mask[:,21]=0
+        mask = tf.constant(mask, dtype=tf.float32)
+        mask = tf.expand_dims(mask,-1)
+    
         from train.hypotheses import conv_2x1024_5, conv_1024_4, conv_512_3, conv_gomoku
 
         hypotheses_dict = {
@@ -65,7 +75,7 @@ def make_model_fn(board_size, options):
 
         labels = tf.expand_dims(labels, -1)
         labels = tf.reshape(labels, [-1, 22, 22, 1], name='model_reshape')
-        loss = tf.losses.mean_squared_error(labels, out)
+        loss = tf.losses.mean_squared_error(labels, out*mask)
         mean_error=tf.metrics.mean(tf.abs(labels-out))
 
         if mode == tf.estimator.ModeKeys.EVAL:    

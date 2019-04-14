@@ -1,7 +1,40 @@
 import tensorflow as tf
+import numpy as np
 from tensorflow.feature_column import numeric_column as num
-from tensorflow.estimator import RunConfig
-from tensorflow.contrib.distribute import MirroredStrategy
+
+
+
+def conv_gomoku(board_size, features, feature_columns, options):
+
+    N = board_size
+    
+    layout = options['layout']
+    
+    feature_columns = [num('state', shape=((N+2)*(N+2)*2))]
+
+    input_layer = tf.feature_column.input_layer( 
+        features, feature_columns=feature_columns)
+
+    layer = tf.reshape(input_layer, [-1, N+2, N+2, 2], name='reshape_input') 
+   
+    for filters, kernel in np.reshape(layout, [-1,2]):
+        layer = tf.layers.conv2d(inputs=layer, filters=filters, 
+                                 kernel_size=[kernel, kernel], strides=[1,1], 
+                                 padding='SAME')
+        
+        # Exotic! Let the network learn efficient activation functions at each layer
+        beta_l = tf.Variable(-0.5),
+        beta_r = tf.Variable(0.5)
+        layer = layer * (layer - beta_l) * (layer - beta_r)
+        
+    layer = tf.layers.conv2d(inputs=layer, filters=1, 
+                              kernel_size=[kernel, kernel], strides=[1,1], 
+                             padding='SAME')
+    
+    return layer
+
+
+
 
 def conv_2x1024_5(board_size, features, feature_columns, options):
 
@@ -79,3 +112,5 @@ def conv_512_3(board_size, features, feature_columns, options):
                              strides=[1,1], padding='SAME')
 
     return conv3
+
+
