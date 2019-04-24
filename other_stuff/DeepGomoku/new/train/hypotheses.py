@@ -22,10 +22,10 @@ def conv_gomoku(board_size, features, feature_columns, options):
                                  kernel_size=[kernel, kernel], strides=[1,1], 
                                  padding='SAME')
         
-        # Exotic! Let the network learn efficient activation functions at each layer
         beta_l = tf.Variable(-0.5),
         beta_r = tf.Variable(0.5)
-        layer = layer * (layer - beta_l) * (layer - beta_r)
+        exotic = layer * (layer - beta_l) * (layer - beta_r) * tf.exp(-layer*layer)
+        layer = tf.nn.relu(layer)+exotic
         
     layer = tf.layers.conv2d(inputs=layer, filters=1, 
                               kernel_size=[kernel, kernel], strides=[1,1], 

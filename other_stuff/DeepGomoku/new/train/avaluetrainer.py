@@ -12,7 +12,7 @@ def make_tfr_input_fn(filename_pattern, batch_size, board_size, options):
     N_p = board_size + 2
     feature_spec = {
         'state': tf.FixedLenFeature([N_p * N_p * 2], tf.float32),
-        'qvalue': tf.FixedLenFeature([N_p * N_p], tf.float32)
+        'advantage': tf.FixedLenFeature([N_p * N_p], tf.float32)
     }
 
     def _input_fn():
@@ -24,7 +24,7 @@ def make_tfr_input_fn(filename_pattern, batch_size, board_size, options):
             prefetch_buffer_size=options['prefetch_buffer_size'],
             reader_num_threads=options['reader_num_threads'],
             parser_num_threads=options['parser_num_threads'],
-            label_key='qvalue')
+            label_key='advantage')
 
         if options['distribute']:
             return dataset 

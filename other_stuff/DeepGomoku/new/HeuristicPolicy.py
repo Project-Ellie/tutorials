@@ -2,12 +2,16 @@ from operator import itemgetter
 import numpy as np
 from GomokuTools import GomokuTools as gt
 
+MUST_DEFEND=-1
+CAN_ATTACK=1
+
 class Move:
-    def __init__(self, x, y, comment, status):
+    def __init__(self, x, y, comment, status, off_def=0):
         self.status=status # 0: ongoing, -1: giving up, 1: declaring victory
         self.x = x
         self.y = y
         self.comment = comment
+        self.off_def = off_def # +1 = can attack, -1 = must defend
         
     def __repr__(self):
         return self.comment+ ("" if self.status == -1 
@@ -70,24 +74,24 @@ class HeuristicGomokuPolicy:
         #print(xo, yo, vo)
         #print(xd, yd, vd)
         if vo > 7.0:
-            return Move(xo, yo, "Immediate win", IMMEDIATE_WIN)
+            return Move(xo, yo, "Immediate win", IMMEDIATE_WIN, CAN_ATTACK)
         elif vd > 7.0:
             if sorted(clean_scores[viewpoint].reshape(self.board.N*self.board.N))[-2] > 7.0:
-                return Move(0,0,"Two or more immediate threats. Giving up.", SURE_LOSS)
-            return Move (xd, yd, "Defending immediate threat", ONGOING)
+                return Move(0,0,"Two or more immediate threats. Giving up.", SURE_LOSS, MUST_DEFEND)
+            return Move (xd, yd, "Defending immediate threat", ONGOING, MUST_DEFEND)
         elif vo == 7.0:
-            return Move(xo, yo, "Win-in-2", SURE_WIN)
+            return Move(xo, yo, "Win-in-2", SURE_WIN, CAN_ATTACK)
         elif vd == 7.0:
             options = self.defense_options(xd, yd)
             l = list(zip(options, np.zeros(len(options))))
             sampler = StochasticMaxSampler(l, len(options))
             xd, yd = sampler.draw()
-            return Move(xd, yd, "Defending Win-in-2", ONGOING)
+            return Move(xd, yd, "Defending Win-in-2", ONGOING, MUST_DEFEND)
 
         elif vo == 6.9:
-            return Move(xo, yo, "Soft-win-in-2", ONGOING)
+            return Move(xo, yo, "Soft-win-in-2", ONGOING, CAN_ATTACK)
         elif vd == 6.9:
-            return Move(xd, yd, "Defending Soft-win-in-2", ONGOING)
+            return Move(xd, yd, "Defending Soft-win-in-2", ONGOING, MUST_DEFEND)
         else:
             return None
         
@@ -107,14 +111,19 @@ class HeuristicGomokuPolicy:
                     if (x,y) not in self.board.stones:
                             self.board.set(x,y)
                             self.board.compute_scores(color)
-                            s=self.board.get_score(color, xd,yd)
+                            clean_scores = self.board.get_clean_scores()
+                            s=clean_scores[color][r][c]
                             self.board.undo()
                             self.board.compute_scores(color)
-                            if s < 7.0 and self.board.get_score(color, x, y) == 7.0:
+                            clean_scores = self.board.get_clean_scores()
+                            s1=clean_scores[color][r][c]
+                            if s < 7.0 and s1 == 7.0:
                                 options.append((x,y))
         options.append((xd,yd))
         return options
 
+                                
+    
                                 
     def suggest(self, style=None, bias=1.0, topn=10):
         if style == None:

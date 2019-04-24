@@ -134,6 +134,7 @@ def create_samples_and_qvalues(board, heuristics):
 
     samples = []
     qvalues = []
+    avalues = []
     for stones_t in all_stones_t:
         sample = create_sample(stones_t, board.N, 1-board.current_color)
         board = GomokuBoard(heuristics, board.N, stones=stones_t)
@@ -142,8 +143,11 @@ def create_samples_and_qvalues(board, heuristics):
         qvalue = wrap_sample(qvalue, default_value)
         samples.append(sample)
         qvalues.append(qvalue)
+        avalues.append((qvalue-default_value)/100.0)
 
-    return np.array(samples), np.reshape(qvalues, [8, board.N+2, board.N+2, 1])
+    return (np.array(samples), 
+            np.reshape(qvalues, [8, board.N+2, board.N+2, 1]), 
+            np.reshape(avalues, [8, board.N+2, board.N+2, 1]))
 
 
 def data_from_game(board, policy, heuristics):    
@@ -153,13 +157,14 @@ def data_from_game(board, policy, heuristics):
     # Don't want to see fours (my heuristics don't work well when the game is essentially done anyway.)
     board.undo(False).undo(False)
 
-    s,v = create_samples_and_qvalues(board, heuristics)
+    s,q,a = create_samples_and_qvalues(board, heuristics)
     while board.cursor > 6:
         board.undo()
-        s1, v1 = create_samples_and_qvalues(board, heuristics)
+        s1, q1, a1 = create_samples_and_qvalues(board, heuristics)
         s = np.concatenate((s,s1))
-        v = np.concatenate((v,v1))
-    return s,v
+        q = np.concatenate((q,q1))
+        a = np.concatenate((a,a1))
+    return s,q,a
 
 def to_matrix12(sample):
     field = np.rollaxis(sample.reshape(22,22,2), 2, 0).astype(np.int)
