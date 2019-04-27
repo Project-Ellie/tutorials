@@ -202,7 +202,7 @@ class GomokuBoard(GomokuField):
         for c in range(self.N):
             for r in range(self.N):
                 x,y=GomokuTools.m2b((r,c), self.N)
-                if (x,y) not in self.stones:
+                if (x,y) not in self.stones[:self.cursor+1]:
                     offensive = self.scores[viewpoint][r][c]
                     defensive = self.scores[1-viewpoint][r][c]
                     color = self.color_for(offensive, defensive)

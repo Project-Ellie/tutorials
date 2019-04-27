@@ -110,7 +110,7 @@ class GomokuField:
         for viewpoint in [BLACK, WHITE]:
             self.compute_scores(viewpoint)
             
-    def compute_scores(self, viewpoint):
+    def compute_scores(self, viewpoint, upto=None):
         o = self.lines[viewpoint]
         d = self.lines[1-viewpoint] | self.lines[2]
         lines = self.heuristics.lookup_line_score(o, d)
