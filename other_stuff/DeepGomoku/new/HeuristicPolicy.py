@@ -52,10 +52,20 @@ SURE_LOSS = -1
 ONGOING = 0
     
 class HeuristicGomokuPolicy:
-    def __init__(self, board, style, ts=None):
+    def __init__(self, board, style, bias, topn, threat_search):
+        """
+        Params:
+        style: 0=aggressive, 1=defensive, 2=mixed
+        bias: bias towards the higher values when choosing from a distribution. Low bias tries more.
+        topn: number of top moves to include in distribution
+        threat_search: The ThreatSearch instance
+        """
         self.board = board
         self.style = style # 0=aggressive, 1=defensive, 2=mixed
-        self.ts = ts or ThreatSearch(4, 4) # width and depth 4
+        self.bias = bias
+        self.topn = topn
+        self.ts = threat_search
+        
     
     def pos_and_scores(self, index, viewpoint):
         "index: the index of the scored position in a flattened array"
@@ -100,13 +110,13 @@ class HeuristicGomokuPolicy:
             moves, won = self.ts.is_tseq_won(self.board)
             if won:
                 x, y = moves[0]
-                print(moves)
+                #print(moves)
                 return Move(x, y, "Pursuing winning threat sequence", ONGOING, CAN_ATTACK)
 
             # I might need to defend a threat sequence...
             moves = self.ts.is_tseq_threat(self.board)
             if moves:
-                print(moves)
+                #print(moves)
                 x, y = moves[0]
                 return Move(x, y, "Defending lurking threat sequence", ONGOING, MUST_DEFEND)
         else:    
@@ -142,9 +152,11 @@ class HeuristicGomokuPolicy:
                                 
     
                                 
-    def suggest(self, style=None, bias=1.0, topn=10):
-        if style == None:
-            style = self.style
+    def suggest(self, style=None, bias=None, topn=None):
+        style = style or self.style
+        bias = bias or self.bias
+        topn = topn or self.topn
+            
         critical = self.most_critical_pos()
         if critical is not None:
             return critical
@@ -209,13 +221,23 @@ class HeuristicGomokuPolicy:
                 self.board.compute_scores(color)
 
             counter = self.suggest_naive(style=2, bias=1.0, topn=3)# naive-strongest defense assumed
+            if counter.status == -1:
+                print("Opponent gave up")
+                print(str(counter))
+                scores = [(choice[1], np.float32(6.95))] # 6.95 is a 'marker'. 
+                self.board.undo()
+                break
+            
             self.board.set(counter.x, counter.y)
+            
             for color in [0,1]:
                 self.board.compute_scores(color)
             value = self.board.get_value()
+            
             self.board.undo().undo()
             for color in [0,1]:
                 self.board.compute_scores(color)
+            
             scores.append((choice[1], value))
             
         return StochasticMaxSampler(scores, n, bias)
@@ -257,7 +279,7 @@ class ThreatSearch():
         board = deepcopy(board)
         
         # Need a new policy on the copy.
-        policy = HeuristicGomokuPolicy(board=board, style=0)
+        policy = HeuristicGomokuPolicy(board=board, style=0, bias=1.0, topn=5, threat_search=self)
 
         return self._is_tseq_won(board, policy, max_depth, max_width, [])
 
