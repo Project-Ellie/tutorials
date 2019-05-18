@@ -30,8 +30,8 @@ class StochasticMaxSampler:
         self.bias = bias
         
         top = sorted(list(array), key=itemgetter(1))[-topn:]
-        values = [v for _,v in top]
-        positions = [p for p,_ in top]
+        values = [v for _,v in top if v != 0]
+        positions = [p for p,v in top if v != 0]
 
         biased = (values - min(values)) * self.bias
         probs = np.exp(np.asarray(biased))
@@ -52,7 +52,7 @@ SURE_LOSS = -1
 ONGOING = 0
     
 class HeuristicGomokuPolicy:
-    def __init__(self, style, bias, topn, threat_search):
+    def __init__(self, style, bias, topn, threat_search=None):
         """
         Params:
         style: 0=aggressive, 1=defensive, 2=mixed
@@ -95,7 +95,7 @@ class HeuristicGomokuPolicy:
             return Move(xo, yo, "Win-in-2", SURE_WIN, CAN_ATTACK)
         elif vd == 7.0:
             options = self.defense_options(board, xd, yd)
-            l = list(zip(options, np.zeros(len(options))))
+            l = list(zip(options, np.ones(len(options))))
             sampler = StochasticMaxSampler(l, len(options))
             xd, yd = sampler.draw()
             return Move(xd, yd, "Defending Win-in-2", ONGOING, MUST_DEFEND)
@@ -105,7 +105,7 @@ class HeuristicGomokuPolicy:
         elif vd == 6.9:
             return Move(xd, yd, "Defending Soft-win-in-2", ONGOING, MUST_DEFEND)
         
-        elif consider_threat_sequences:
+        elif self.ts and consider_threat_sequences:
             # I might have a winning threat sequence...
             moves, won = self.ts.is_tseq_won(board)
             if won:
@@ -150,7 +150,27 @@ class HeuristicGomokuPolicy:
         return options
 
                                 
-    
+    def distr(self, board, topn=None, bias=None, style=None):
+        """
+        computes a dict of moves (x,y) with their priors based on the current board
+        """
+        style = style or self.style
+        bias = bias or self.bias
+        topn = topn or self.topn
+
+        critical = self.most_critical_pos(board)
+        if critical:
+            return {(critical.x, critical.y): 1.0}
+        else:
+            choices = self.suggest_from_best_value(board, topn, style, bias).choices
+            return {(gt.m2b(c[1], board.N)[0], gt.m2b(c[1], board.N)[1]): c[2] for c in choices}
+        
+    def value(self, board):
+        """
+        The value of the board as from the scores.
+        """
+        return board.get_value(compute_scores=True)
+        
                                 
     def suggest(self, board, style=None, bias=None, topn=None):
         style = style or self.style
@@ -189,6 +209,9 @@ class HeuristicGomokuPolicy:
         towards the larger scores
         """
         from operator import itemgetter
+
+        if style == None:
+            style = self.style
 
         clean_scores = board.get_clean_scores()
 

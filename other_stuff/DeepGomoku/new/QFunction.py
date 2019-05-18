@@ -30,7 +30,7 @@ def least_significant_move(board):
 def value_after(board, move, policy):
 
     board.set(*move)
-    counter = policy.suggest_naive(style=2, topn=1)
+    counter = policy.suggest_naive(board, style=2, topn=1)
 
     # Some situations in recorded matches are still difficult for my heuristics at this point
     # So I simply ignore the value difference for these few
@@ -84,7 +84,7 @@ def heuristic_QF(board, policy):
 
     # for efficiency sake: all but the best 20 are considered as bad as the worst.
     else: 
-        sampler = policy.suggest_from_best_value(20, 2, .05)
+        sampler = policy.suggest_from_best_value(board, 20, 2, .05)
         default_value = value_after(board, least_significant_move(board), policy)
         q = q + default_value
         for move in sampler.choices:
