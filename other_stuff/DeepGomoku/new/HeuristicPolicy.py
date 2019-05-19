@@ -247,8 +247,8 @@ class HeuristicGomokuPolicy:
             counter = self.suggest_naive(board, style=2, bias=1.0, topn=3)
 
             if counter.status == -1:
-                print("Opponent gave up")
-                print(str(counter))
+                #print("Opponent gave up")
+                #print(str(counter))
                 scores = [(choice[1], np.float32(6.95))] # 6.95 is a 'marker'. 
                 board.undo()
                 break

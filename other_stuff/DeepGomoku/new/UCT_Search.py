@@ -3,8 +3,9 @@ import  numpy as np
 from Heuristics import won_or_lost
 from GomokuBoard import GomokuBoard
 
-def uct_search(game_state, policy, num_reads, verbose=0, rollout_delay=1.0):
+def uct_search(game_state, policy, num_reads, C, verbose=0, rollout_delay=1.0):
     """
+    DEPRECATED!!!! See GomokuHeuristic_UCT and UCT_Search.py for current state of the art.
     """
     def _is_terminal(value):
         return value == 1 or value == -1
@@ -16,7 +17,7 @@ def uct_search(game_state, policy, num_reads, verbose=0, rollout_delay=1.0):
         return np.random.choice(actions, 1, p=probas)[0]    
 
     count = [0,0,0]
-    root = UCT_Node(game_state)
+    root = UCT_Node(game_state, C)
     for read_count in range(num_reads):
 
         # UCB-driven selection
@@ -54,7 +55,7 @@ def uct_search(game_state, policy, num_reads, verbose=0, rollout_delay=1.0):
 
 
 class UCT_Node:
-    def __init__(self, game_state, pos=None, parent=None, C=1.4):
+    def __init__(self, game_state, C, pos=None, parent=None):
         self.game_state = game_state
         self.pos = pos
         self.is_expanded = False
@@ -97,7 +98,7 @@ class UCT_Node:
         moves. In short: Maximize the opponents pain! My move is your pain.
         """
         qus = - self.child_Q() + self.C * self.child_U()
-        pos = self.any_argmax(qus) # because we're starting at index 1
+        pos = self.any_argmax(qus) 
         if self.children:
             return self.children[pos]
         else:
@@ -130,7 +131,7 @@ class UCT_Node:
         move = self.child_moves[pos]
         new_game_state.stones.append(move)
         new_game_state.to_play = -new_game_state.to_play
-        child = UCT_Node(new_game_state, pos=pos, parent=self)
+        child = UCT_Node(new_game_state, C=self.C, pos=pos, parent=self)
         self.children[pos] = child
         return child
     
@@ -196,7 +197,7 @@ class PolicyAdapter:
         board = GomokuBoard(heuristics=self.heuristic, stones=state.stones, N=state.size)
         distr = self.policy.distr(board, self.topn, self.bias)
         value_estimate = self.policy.value(board) / 200.0
-        return distr, value_estimate
+        return distr, value_estimate, won_or_lost(board)
     
     
 from copy import deepcopy
@@ -212,7 +213,8 @@ class GomokuEnvironment:
             heuristic, N, disp_width=disp_width, stones=initial_stones)
         
     def state(self):
-        to_play = 1 if self.board.current_color == 0 else -1
+        # Note that the current_color of the board is the one that's just moved.
+        to_play = -1 if self.board.current_color == 0 else 1
         return GomokuState(self.board.stones, size=self.board.N, to_play=to_play)
         
     def reset(self):
