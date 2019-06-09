@@ -36,6 +36,7 @@ def move(message):
 def set_board_size(message):    
     board = session['board']
     board['size'] = message['size']
+    board['squares'] = message['squares']
     emit('update', {'board': session['board'], 'stones': session['stones']})
 
 
@@ -43,6 +44,7 @@ def set_board_size(message):
 def test_connect():
     emit('my_response', {'data': 'Connected', 'count': 0})
     session['stones'] = []
+    session['board'] = {}
 
 
 if __name__ == '__main__':

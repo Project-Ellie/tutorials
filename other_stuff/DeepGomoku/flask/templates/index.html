@@ -21,8 +21,10 @@
             // can set the namespace to an empty string.
             namespace = '/test';
 
-            width=$('input#board_size').val()
+            width=$('input#board_size').val();
+            squares=Number($('input#board_squares').val());
             $('div#canvas').append('<canvas width="'+width+'" height="'+width+'" id="board1"></canvas>');
+            console.log(squares)
             
             // The connection URL has the following format, relative to the current page:
             //     http[s]://<domain>:<port>[/<namespace>]
@@ -43,12 +45,16 @@
             });
             
             $('form#board_size').submit(function(event) {
-                socket.emit('board_size', {size: $('input#board_size').val()});
+                socket.emit('board_size', {
+                    size: $('input#board_size').val(),
+                    squares: Number($('input#board_squares').val())
+                });
                 return false;
             });
 
             var canvas = document.getElementById("board1");
-            board={'size': width, 'squares': 15}
+            console.log(squares)
+            board={'size': width, 'squares': squares}
             draw_board(board, [], canvas);
             
             addCanvasListener(canvas, socket, board);
@@ -74,7 +80,8 @@
 
     <form id="board_size" method="POST" action='#'>
         <input type="number" name="board_size" id="board_size" placeholder="board size" value="600">
-        <input type="submit" value="Set Board size">
+        <input type="number" name="board_squares" id="board_squares" placeholder="number of squares" value="19">
+        <input type="submit" value="Set Board Parameters">
     </form>
     <hr/>
     
