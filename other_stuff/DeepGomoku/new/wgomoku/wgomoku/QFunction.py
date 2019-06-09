@@ -1,6 +1,6 @@
 from operator import itemgetter
 import numpy as np
-from GomokuTools import GomokuTools as gt
+from .GomokuTools import GomokuTools as gt
 
 MAX_QVALUE=200
 

@@ -1,8 +1,8 @@
 import numpy as np
-from GomokuTools import GomokuTools as gt
-from GomokuBoard import GomokuBoard
-from HeuristicPolicy import HeuristicGomokuPolicy
-from QFunction import heuristic_QF
+from .GomokuTools import GomokuTools as gt
+from .GomokuBoard import GomokuBoard
+from .HeuristicPolicy import HeuristicGomokuPolicy
+from .QFunction import heuristic_QF
 
 BLACK=0
 WHITE=1

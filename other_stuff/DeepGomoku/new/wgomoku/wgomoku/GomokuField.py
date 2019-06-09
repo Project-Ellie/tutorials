@@ -1,7 +1,7 @@
 import numpy as np
-from GomokuTools import GomokuTools as gt
-from NH9x9 import NH9x9
-from Heuristics import Heuristics
+from .GomokuTools import GomokuTools as gt
+from .NH9x9 import NH9x9
+from .Heuristics import Heuristics
 
 BLACK=0
 WHITE=1

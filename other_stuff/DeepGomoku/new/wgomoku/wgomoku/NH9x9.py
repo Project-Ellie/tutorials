@@ -1,5 +1,5 @@
 import numpy as np
-from GomokuTools import GomokuTools
+from .GomokuTools import GomokuTools
 
 class NH9x9:
     

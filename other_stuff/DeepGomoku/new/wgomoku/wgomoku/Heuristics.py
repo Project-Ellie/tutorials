@@ -1,5 +1,5 @@
 import numpy as np
-from GomokuTools import GomokuTools as gt
+from .GomokuTools import GomokuTools as gt
 
 
 

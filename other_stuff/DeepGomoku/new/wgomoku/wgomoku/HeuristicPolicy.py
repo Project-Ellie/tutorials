@@ -1,7 +1,7 @@
 from operator import itemgetter
 import numpy as np
 from copy import deepcopy
-from GomokuTools import GomokuTools as gt
+from .GomokuTools import GomokuTools as gt
 
 MUST_DEFEND=-1
 CAN_ATTACK=1

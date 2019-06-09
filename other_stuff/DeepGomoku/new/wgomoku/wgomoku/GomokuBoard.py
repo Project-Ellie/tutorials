@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from GomokuField import GomokuField
-from GomokuTools import GomokuTools
+from .GomokuField import GomokuField
+from .GomokuTools import GomokuTools
 import pandas as pd
 
 BLACK=0

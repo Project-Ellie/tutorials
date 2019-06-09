@@ -1,7 +1,7 @@
 from copy import deepcopy
-import  numpy as np
-from Heuristics import won_or_lost
-from GomokuBoard import GomokuBoard
+import numpy as np
+from .Heuristics import won_or_lost
+from .GomokuBoard import GomokuBoard
 
 def uct_search(game_state, policy, num_reads, C, verbose=0, rollout_delay=1.0):
     """
@@ -201,7 +201,7 @@ class PolicyAdapter:
     
     
 from copy import deepcopy
-from Heuristics import won_or_lost, is_terminated
+from .Heuristics import won_or_lost, is_terminated
 
 class GomokuEnvironment:
     

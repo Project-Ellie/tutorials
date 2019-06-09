@@ -1,7 +1,7 @@
 from copy import deepcopy
 import numpy as np
-from GomokuTools import GomokuTools as gt
-from HeuristicPolicy import HeuristicGomokuPolicy
+from .GomokuTools import GomokuTools as gt
+from .HeuristicPolicy import HeuristicGomokuPolicy
 
 
 def least_significant_move(board):
