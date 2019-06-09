@@ -9,15 +9,18 @@ WHITE=1
 EDGES=2
 STYLE_MIXED=2
 
-def record_game(policy, max_n = 40):
-    board = policy.board
+def roll_out(board, policy, max_n = 40):
+    """
+    takes the board and subsequently applies the given policy to black and white
+    until the game is decided or max_n moves have been played.
+    """
     n = 0
     board.compute_all_scores()
-    move = policy.suggest()
+    move = policy.suggest(board)
     while move.status == 0 and n < max_n:
         board.set(move.x,move.y)
         board.compute_all_scores()
-        move = policy.suggest()
+        move = policy.suggest(board)
         n+=1
     return board
 
@@ -113,7 +116,7 @@ def wrap_sample(array, value):
     ])
 
 
-def create_samples_and_qvalues(board, heuristics):
+def create_samples_and_qvalues(board, policy, heuristics):
     """
     create 8 equivalent samples and qvalues from the given board
     """
@@ -123,9 +126,8 @@ def create_samples_and_qvalues(board, heuristics):
     # we won't need the board that has a finished line of 5.
     if True:
         dcp = deepcopy(board)
-        policy = HeuristicGomokuPolicy(dcp, style=2)
         dcp.undo()
-        if policy.suggest().status == 2:
+        if policy.suggest(dcp).status == 2:
             board.undo().undo()
 
     all_stones_t = [transform(board.stones.copy(), board.N, rot, ref) 
@@ -138,7 +140,6 @@ def create_samples_and_qvalues(board, heuristics):
     for stones_t in all_stones_t:
         sample = create_sample(stones_t, board.N, 1-board.current_color)
         board = GomokuBoard(heuristics, board.N, stones=stones_t)
-        policy = HeuristicGomokuPolicy(board, STYLE_MIXED)
         qvalue, default_value = heuristic_QF(board, policy)
         qvalue = wrap_sample(qvalue, default_value)
         samples.append(sample)
@@ -157,10 +158,10 @@ def data_from_game(board, policy, heuristics):
     # Don't want to see fours (my heuristics don't work well when the game is essentially done anyway.)
     board.undo(False).undo(False)
 
-    s,q,a = create_samples_and_qvalues(board, heuristics)
+    s,q,a = create_samples_and_qvalues(board, policy, heuristics)
     while board.cursor > 6:
         board.undo()
-        s1, q1, a1 = create_samples_and_qvalues(board, heuristics)
+        s1, q1, a1 = create_samples_and_qvalues(board, policy, heuristics)
         s = np.concatenate((s,s1))
         q = np.concatenate((q,q1))
         a = np.concatenate((a,a1))

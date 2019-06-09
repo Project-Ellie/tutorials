@@ -1,6 +1,43 @@
 import numpy as np
 from GomokuTools import GomokuTools as gt
 
+
+
+def won_or_lost(board):
+    """
+    Returns :1, if the current board will for sure be won in 1 or two moves by the current
+    player, -1, if the game is for sure lost in one or two moves by the current player.
+    Returns 0 otherwise
+    """
+    def _pos_and_scores(board, index, viewpoint):
+        mpos = np.divmod(index, board.N)
+        bpos = gt.m2b(mpos, board.N)
+        return (bpos[0], bpos[1], 
+            board.scores[viewpoint][mpos[0]][mpos[1]])    
+        
+    viewpoint = board.current_color
+    clean_scores = board.get_clean_scores()
+    o = np.argmax(clean_scores[1-viewpoint])
+    d = np.argmax(clean_scores[viewpoint]) 
+    xo, yo, vo = _pos_and_scores(board, o, 1-board.current_color)
+    xd, yd, vd = _pos_and_scores(board, d, board.current_color)
+    if vo > 7.0:
+        return 1
+    elif vd > 7.0:
+        if sorted(clean_scores[viewpoint].reshape(board.N*board.N))[-2] > 7.0:
+            return -1
+        return 0
+    elif vo == 7.0:
+        return 1
+    else:
+        return 0
+    
+def is_terminated(board):    
+    """
+    won, lost or too crowded
+    """
+    return won_or_lost(board) != 0 or len(board.stones)>150
+    
 class Heuristics:
     
     def __init__(self, kappa):

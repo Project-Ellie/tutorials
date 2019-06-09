@@ -30,8 +30,8 @@ class StochasticMaxSampler:
         self.bias = bias
         
         top = sorted(list(array), key=itemgetter(1))[-topn:]
-        values = [v for _,v in top]
-        positions = [p for p,_ in top]
+        values = [v for _,v in top if v != 0]
+        positions = [p for p,v in top if v != 0]
 
         biased = (values - min(values)) * self.bias
         probs = np.exp(np.asarray(biased))
@@ -52,7 +52,7 @@ SURE_LOSS = -1
 ONGOING = 0
     
 class HeuristicGomokuPolicy:
-    def __init__(self, board, style, bias, topn, threat_search):
+    def __init__(self, style, bias, topn, threat_search=None):
         """
         Params:
         style: 0=aggressive, 1=defensive, 2=mixed
@@ -60,42 +60,42 @@ class HeuristicGomokuPolicy:
         topn: number of top moves to include in distribution
         threat_search: The ThreatSearch instance
         """
-        self.board = board
         self.style = style # 0=aggressive, 1=defensive, 2=mixed
         self.bias = bias
         self.topn = topn
         self.ts = threat_search
         
     
-    def pos_and_scores(self, index, viewpoint):
+    def pos_and_scores(self, board, index, viewpoint):
         "index: the index of the scored position in a flattened array"
-        mpos = np.divmod(index, self.board.N)
-        bpos = gt.m2b(mpos, self.board.N)
+        mpos = np.divmod(index, board.N)
+        bpos = gt.m2b(mpos, board.N)
         return (bpos[0], bpos[1], 
-            self.board.scores[viewpoint][mpos[0]][mpos[1]])
+            board.scores[viewpoint][mpos[0]][mpos[1]])
     
-    def most_critical_pos(self, consider_threat_sequences=True):
+    def most_critical_pos(self, board, consider_threat_sequences=True):
         "If this function returns not None, take the move or die."
     
-        viewpoint = self.board.current_color
-        clean_scores = self.board.get_clean_scores()
+        viewpoint = board.current_color
+        clean_scores = board.get_clean_scores()
         o = np.argmax(clean_scores[1-viewpoint])
         d = np.argmax(clean_scores[viewpoint]) 
-        xo, yo, vo = self.pos_and_scores(o, 1-self.board.current_color)
-        xd, yd, vd = self.pos_and_scores(d, self.board.current_color)
+        xo, yo, vo = self.pos_and_scores(board, o, 1-board.current_color)
+        xd, yd, vd = self.pos_and_scores(board, d, board.current_color)
         #print(xo, yo, vo)
         #print(xd, yd, vd)
         if vo > 7.0:
             return Move(xo, yo, "Immediate win", IMMEDIATE_WIN, CAN_ATTACK)
         elif vd > 7.0:
-            if sorted(clean_scores[viewpoint].reshape(self.board.N*self.board.N))[-2] > 7.0:
-                return Move(0,0,"Two or more immediate threats. Giving up.", SURE_LOSS, MUST_DEFEND)
+            if sorted(clean_scores[viewpoint].reshape(board.N*board.N))[-2] > 7.0:
+                return Move(0,0,"Two or more immediate threats. Giving up.", 
+                            SURE_LOSS, MUST_DEFEND)
             return Move (xd, yd, "Defending immediate threat", ONGOING, MUST_DEFEND)
         elif vo == 7.0:
             return Move(xo, yo, "Win-in-2", SURE_WIN, CAN_ATTACK)
         elif vd == 7.0:
-            options = self.defense_options(xd, yd)
-            l = list(zip(options, np.zeros(len(options))))
+            options = self.defense_options(board, xd, yd)
+            l = list(zip(options, np.ones(len(options))))
             sampler = StochasticMaxSampler(l, len(options))
             xd, yd = sampler.draw()
             return Move(xd, yd, "Defending Win-in-2", ONGOING, MUST_DEFEND)
@@ -105,16 +105,16 @@ class HeuristicGomokuPolicy:
         elif vd == 6.9:
             return Move(xd, yd, "Defending Soft-win-in-2", ONGOING, MUST_DEFEND)
         
-        elif consider_threat_sequences:
+        elif self.ts and consider_threat_sequences:
             # I might have a winning threat sequence...
-            moves, won = self.ts.is_tseq_won(self.board)
+            moves, won = self.ts.is_tseq_won(board)
             if won:
                 x, y = moves[0]
                 #print(moves)
                 return Move(x, y, "Pursuing winning threat sequence", ONGOING, CAN_ATTACK)
 
             # I might need to defend a threat sequence...
-            moves = self.ts.is_tseq_threat(self.board)
+            moves = self.ts.is_tseq_threat(board)
             if moves:
                 #print(moves)
                 x, y = moves[0]
@@ -122,27 +122,27 @@ class HeuristicGomokuPolicy:
         else:    
             return None
         
-    def defense_options(self, xd, yd):
+    def defense_options(self, board, xd, yd):
         """
         return a list of all options that could remedy the critical state
         """
-        color = self.board.current_color
+        color = board.current_color
         options=[]        
-        rc = gt.b2m((xd, yd),self.board.N)
+        rc = gt.b2m((xd, yd), board.N)
         for direction in ['e', 'ne', 'n', 'nw']:
             step = np.array(gt.dirs()[direction][1])
             for w in [-4,-3,-2,-1,1,2,3,4]:
                 r, c = rc+w*step
-                if r >= 0 and r < self.board.N and c >= 0 and c < self.board.N:
-                    x,y = gt.m2b((r,c), self.board.N)
-                    if (x,y) not in self.board.stones:
-                            self.board.set(x,y)
-                            self.board.compute_scores(color)
-                            clean_scores = self.board.get_clean_scores()
+                if r >= 0 and r < board.N and c >= 0 and c < board.N:
+                    x,y = gt.m2b((r,c), board.N)
+                    if (x,y) not in board.stones:
+                            board.set(x,y)
+                            board.compute_scores(color)
+                            clean_scores = board.get_clean_scores()
                             s=clean_scores[color][r][c]
-                            self.board.undo()
-                            self.board.compute_scores(color)
-                            clean_scores = self.board.get_clean_scores()
+                            board.undo()
+                            board.compute_scores(color)
+                            clean_scores = board.get_clean_scores()
                             s1=clean_scores[color][r][c]
                             if s < 7.0 and s1 == 7.0:
                                 options.append((x,y))
@@ -150,49 +150,72 @@ class HeuristicGomokuPolicy:
         return options
 
                                 
-    
+    def distr(self, board, topn=None, bias=None, style=None):
+        """
+        computes a dict of moves (x,y) with their priors based on the current board
+        """
+        style = style or self.style
+        bias = bias or self.bias
+        topn = topn or self.topn
+
+        critical = self.most_critical_pos(board)
+        if critical:
+            return {(critical.x, critical.y): 1.0}
+        else:
+            choices = self.suggest_from_best_value(board, topn, style, bias).choices
+            return {(gt.m2b(c[1], board.N)[0], gt.m2b(c[1], board.N)[1]): c[2] for c in choices}
+        
+    def value(self, board):
+        """
+        The value of the board as from the scores.
+        """
+        return board.get_value(compute_scores=True)
+        
                                 
-    def suggest(self, style=None, bias=None, topn=None):
+    def suggest(self, board, style=None, bias=None, topn=None):
         style = style or self.style
         bias = bias or self.bias
         topn = topn or self.topn
             
-        critical = self.most_critical_pos()
+        critical = self.most_critical_pos(board)
         if critical is not None:
             return critical
         else:
-            sampler = self.suggest_from_best_value(topn, style, bias)
+            sampler = self.suggest_from_best_value(board, topn, style, bias)
             r_c = sampler.draw()
-            x, y = gt.m2b(r_c, self.board.N)
+            x, y = gt.m2b(r_c, board.N)
             return Move(x, y, "Style: %s" % style, 0)
 
 
-    def suggest_naive(self, style=None, bias=1.0, topn=10):
+    def suggest_naive(self, board, style=None, bias=1.0, topn=10):
         """
         Non-deterministic! Samples from the highest naive scores
         """
         if style == None:
             style = self.style
-        critical = self.most_critical_pos(consider_threat_sequences=False)
+        critical = self.most_critical_pos(board, consider_threat_sequences=False)
         if critical is not None:
             return critical
         else:
-            sampler = self.suggest_from_score(topn, style, bias)
+            sampler = self.suggest_from_score(board, topn, style, bias)
             r_c = sampler.draw()
-            x, y = gt.m2b(r_c, self.board.N)
+            x, y = gt.m2b(r_c, board.N)
             return Move(x, y, "Style: %s" % style, 0)
 
         
-    def suggest_from_score(self, n, style, bias):
+    def suggest_from_score(self, board, n, style, bias):
         """
         return a sampler for the top n choices of the given style with a bias > 1.0
         towards the larger scores
         """
         from operator import itemgetter
 
-        clean_scores = self.board.get_clean_scores()
+        if style == None:
+            style = self.style
 
-        viewpoint = self.board.current_color
+        clean_scores = board.get_clean_scores()
+
+        viewpoint = board.current_color
         w_o, w_d = 0.5, 0.5 # relative weights
 
         if style == 0:  # offensive scores
@@ -209,34 +232,36 @@ class HeuristicGomokuPolicy:
         return StochasticMaxSampler(scores, n, bias)
             
 
-    def suggest_from_best_value(self, n, style, bias, nscores=10):
+    def suggest_from_best_value(self, board, n, style, bias, nscores=10):
 
-        sampler = self.suggest_from_score(max(n, nscores), style, bias)
+        sampler = self.suggest_from_score(board, max(n, nscores), style, bias)
 
         scores = []
         for choice in sampler.choices:
-            move = gt.m2b(choice[1], self.board.N)
-            self.board.set(*move)
+            move = gt.m2b(choice[1], board.N)
+            board.set(*move)
             for color in [0,1]:
-                self.board.compute_scores(color)
+                board.compute_scores(color)
 
-            counter = self.suggest_naive(style=2, bias=1.0, topn=3)# naive-strongest defense assumed
+            # naive-strongest defense assumed
+            counter = self.suggest_naive(board, style=2, bias=1.0, topn=3)
+
             if counter.status == -1:
-                print("Opponent gave up")
-                print(str(counter))
+                #print("Opponent gave up")
+                #print(str(counter))
                 scores = [(choice[1], np.float32(6.95))] # 6.95 is a 'marker'. 
-                self.board.undo()
+                board.undo()
                 break
             
-            self.board.set(counter.x, counter.y)
+            board.set(counter.x, counter.y)
             
             for color in [0,1]:
-                self.board.compute_scores(color)
-            value = self.board.get_value()
+                board.compute_scores(color)
+            value = board.get_value()
             
-            self.board.undo().undo()
+            board.undo().undo()
             for color in [0,1]:
-                self.board.compute_scores(color)
+                board.compute_scores(color)
             
             scores.append((choice[1], value))
             
@@ -263,10 +288,10 @@ class ThreatSearch():
         self.max_depth = max_depth
         self.max_width = max_width
     
-    def is_threat(self, policy, x, y):
-        policy.board.set(x,y)
-        mcp = policy.most_critical_pos(consider_threat_sequences=False)
-        policy.board.undo()
+    def is_threat(self, board, policy, x, y):
+        board.set(x,y)
+        mcp = policy.most_critical_pos(board, consider_threat_sequences=False)
+        board.undo()
         return mcp    
     
     def is_tseq_won(self, board, max_depth=None, max_width=None):
@@ -279,7 +304,7 @@ class ThreatSearch():
         board = deepcopy(board)
         
         # Need a new policy on the copy.
-        policy = HeuristicGomokuPolicy(board=board, style=0, bias=1.0, topn=5, threat_search=self)
+        policy = HeuristicGomokuPolicy(style=0, bias=1.0, topn=5, threat_search=self)
 
         return self._is_tseq_won(board, policy, max_depth, max_width, [])
 
@@ -291,22 +316,22 @@ class ThreatSearch():
 
         #print(moves)
 
-        crit = policy.most_critical_pos(consider_threat_sequences=False) 
+        crit = policy.most_critical_pos(board, consider_threat_sequences=False) 
         #print("critical:" + str(crit)) 
         if crit and crit.off_def == -1: # must defend, threat sequence is over
             #print(moves)
             #print("critical:" + str(crit)) 
             return moves, False
 
-        sampler = policy.suggest_from_score(max_width, 0, 2.0)
+        sampler = policy.suggest_from_score(board, max_width, 0, 2.0)
         for c in sampler.choices:
             #print("checking move: " + str(c))
             x,y = gt.m2b((c[1][0],c[1][1]), board.N)
 
-            if self.is_threat(policy, x,y):
+            if self.is_threat(board, policy, x,y):
                 board.set(x,y)
                 moves.append((x,y))
-                defense0 = policy.suggest()
+                defense0 = policy.suggest(board)
 
                 if defense0.status == -1: # The opponent gave up
                     return moves, True     
@@ -316,11 +341,11 @@ class ThreatSearch():
                     #print(policy.defense_options(defense0.x, defense0.y))
 
                     branches = []
-                    for defense in policy.defense_options(defense0.x, defense0.y):
+                    for defense in policy.defense_options(board, defense0.x, defense0.y):
                         # A single successful defense would make this branch useless
 
                         p = deepcopy(policy)
-                        b = p.board
+                        b = deepcopy(board)
                         m = deepcopy(moves)
                         b.set(defense[0], defense[1])
                         m.append((defense[0], defense[1]))
